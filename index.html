@@ -392,7 +392,7 @@ const HW = (() => {
       for (let k = 0; k < 3; k++) a = boxBlur(a, bw, bh, 2);
       return a;
     });
-    const d = new Float32Array(N), gray = new Float32Array(N);
+    const d = new Float32Array(N), gray = new Float32Array(N), cm = new Uint8Array(N); // cm: colour class, 2 strong / 1 weak
     for (let y = 0; y < H; y++) {
       let fy = (y + 0.5) / B - 0.5; fy = fy < 0 ? 0 : fy > bh - 1 ? bh - 1 : fy;
       const y0 = Math.min(bh - 2, fy | 0), ty = fy - y0;
@@ -408,6 +408,10 @@ const HW = (() => {
         }
         const sat = mx > 1e-3 ? (mx - mn) / mx : 0, gv = sum / 3;
         gray[i] = gv;
+        // colour class from the raw photo: flattening turns large colour areas into "background" (white)
+        const r0 = rgba[i * 4], g0 = rgba[i * 4 + 1], b0 = rgba[i * 4 + 2], rx = Math.max(r0, g0, b0);
+        const rs = rx > 32 ? (rx - Math.min(r0, g0, b0)) / rx : 0;
+        cm[i] = rx > 64 && rs > 0.25 ? 2 : (rx > 64 && rs > 0.12) || rs > 0.3 ? 1 : 0;  // dark pixels: weak only
         if (sat > 0.22) d[i] = mx > 0.45 ? 0 : 1 - mx;   // colored: bright = crayon/red pen -> drop
         else d[i] = 1 - gv;
       }
@@ -434,6 +438,89 @@ const HW = (() => {
     for (let i = 0; i < N; i++) if (prot[i] === 2 && out[i] > 110) out[i] = 110;  // heal line gaps (red tick / pencil crossings)
     onStage('specks');
     removeSpecks(out, W, H, Math.max(4, Math.round(12 * SC * SC)));
+    onStage('colour');
+    const color = keepColour(rgba, bg, cm, out, W, H, bw, bh, B, SC);
+    return { gray: out, color };
+  }
+
+  /* ---------- printed colour pictures ---------- */
+  const CP = { erode: 2, zone: 20 };  // half-res px: erosion radius for "solid" colour, picture zone radius
+  // Solid saturated areas survive an erosion; crayon (streaky, paper shows through) and red pen (thin) do not.
+  // Returns RGBA: those pictures in flattened colour over the grey result (gray is updated to their luminance),
+  // or null when the page has none, so black-and-white sheets stay greyscale.
+  function keepColour(rgba, bg, cm, gray, W, H, bw, bh, B, SC) {
+    const S = 2, sw = Math.ceil(W / S), sh = Math.ceil(H / S), n = sw * sh;  // half resolution for speed
+    let m = new Uint8Array(n);
+    for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) {
+      let all = 1;
+      for (let dy = 0; dy < S && all; dy++) for (let dx = 0; dx < S; dx++) {
+        const yy = Math.min(H - 1, y * S + dy), xx = Math.min(W - 1, x * S + dx);
+        if (cm[yy * W + xx] !== 2) { all = 0; break; }
+      }
+      m[y * sw + x] = all;
+    }
+    m = minMax(m, sw, sh, Math.max(1, Math.round(CP.erode * SC)), false);  // erode (half-res px)
+    // large components that do not touch the page edge (a coloured folder or table at the border is not a picture)
+    const lab = new Int32Array(n), q = new Int32Array(n), keep = new Uint8Array(n), kept = [0];
+    // a colour worksheet has at least one big solid picture; dense crayon leaves only small solid patches (~360)
+    const minA = Math.round(225 * SC * SC), bigA = Math.round(1500 * SC * SC), edge = 3; let L = 0, big = 0;
+    for (let s = 0; s < n; s++) {
+      if (!m[s] || lab[s]) continue;
+      L++; let qh = 0, qt = 0, x0 = sw, y0 = sh, x1 = 0, y1 = 0; q[qt++] = s; lab[s] = L;
+      while (qh < qt) {
+        const i = q[qh++], x = i % sw, y = (i / sw) | 0;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        if (x > 0 && m[i - 1] && !lab[i - 1]) { lab[i - 1] = L; q[qt++] = i - 1; }
+        if (x < sw - 1 && m[i + 1] && !lab[i + 1]) { lab[i + 1] = L; q[qt++] = i + 1; }
+        if (y > 0 && m[i - sw] && !lab[i - sw]) { lab[i - sw] = L; q[qt++] = i - sw; }
+        if (y < sh - 1 && m[i + sw] && !lab[i + sw]) { lab[i + sw] = L; q[qt++] = i + sw; }
+      }
+      kept[L] = qt >= minA && x0 > edge && y0 > edge && x1 < sw - 1 - edge && y1 < sh - 1 - edge ? 1 : 0;
+      if (kept[L] && qt >= bigA) big = 1;
+    }
+    if (!big) return null;
+    for (let i = 0; i < n; i++) if (lab[i] && kept[lab[i]]) keep[i] = 1;
+    const zone = minMax(keep, sw, sh, Math.round(CP.zone * SC), true);  // picture zone around the solid parts
+    // paper level that ignores pictures: the shading closing (~40 px) is too small to bridge a whole picture,
+    // so close again on a coarse grid (8 blocks = 32 px cells, radius ~190 px) and upsample back to the block grid
+    const F = 8, cw = Math.ceil(bw / F), chh = Math.ceil(bh / F), RL = Math.max(2, Math.round(6 * SC));
+    bg = bg.map(a => {
+      let c = new Float32Array(cw * chh);
+      for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) { const j = ((y / F) | 0) * cw + ((x / F) | 0), v = a[y * bw + x]; if (v > c[j]) c[j] = v; }
+      c = minMax(c, cw, chh, RL, true); c = minMax(c, cw, chh, RL, false); c = boxBlur(c, cw, chh, 1);
+      const o = new Float32Array(bw * bh);
+      for (let y = 0; y < bh; y++) {
+        let fy = (y + 0.5) / F - 0.5; fy = fy < 0 ? 0 : fy > chh - 1 ? chh - 1 : fy;
+        const y0 = Math.max(0, Math.min(chh - 2, fy | 0)), ty = fy - y0;
+        for (let x = 0; x < bw; x++) {
+          let fx = (x + 0.5) / F - 0.5; fx = fx < 0 ? 0 : fx > cw - 1 ? cw - 1 : fx;
+          const x0 = Math.max(0, Math.min(cw - 2, fx | 0)), tx = fx - x0, j = y0 * cw + x0;
+          const top = c[j] + (c[j + 1] - c[j]) * tx, bot = c[j + cw] + (c[j + cw + 1] - c[j + cw]) * tx;
+          o[y * bw + x] = top + (bot - top) * ty;
+        }
+      }
+      return o;
+    });
+    const out = new Uint8ClampedArray(W * H * 4), c3 = [0, 0, 0];
+    for (let y = 0; y < H; y++) {
+      let fy = (y + 0.5) / B - 0.5; fy = fy < 0 ? 0 : fy > bh - 1 ? bh - 1 : fy;
+      const y0 = Math.min(bh - 2, fy | 0), ty = fy - y0, zr = ((y / S) | 0) * sw;
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x, o = i * 4;
+        out[o + 3] = 255;
+        if (!cm[i] || !zone[zr + ((x / S) | 0)]) { out[o] = out[o + 1] = out[o + 2] = gray[i]; continue; }
+        let fx = (x + 0.5) / B - 0.5; fx = fx < 0 ? 0 : fx > bw - 1 ? bw - 1 : fx;
+        const x0 = Math.min(bw - 2, fx | 0), tx = fx - x0, j = y0 * bw + x0;
+        for (let c = 0; c < 3; c++) {
+          const a = bg[c], top = a[j] + (a[j + 1] - a[j]) * tx, bot = a[j + bw] + (a[j + bw + 1] - a[j + bw]) * tx;
+          const b = top + (bot - top) * ty;
+          let v = rgba[i * 4 + c] / (b > 1 ? b : 1); if (v > 1) v = 1;
+          v = (v - 0.15) / 0.6; c3[c] = (v < 0 ? 0 : v > 1 ? 1 : v) * 255;  // same tone curve as the grey output
+        }
+        out[o] = c3[0]; out[o + 1] = c3[1]; out[o + 2] = c3[2];
+        gray[i] = (c3[0] * 77 + c3[1] * 150 + c3[2] * 29) >> 8;
+      }
+    }
     return out;
   }
 
@@ -578,7 +665,7 @@ const HW = (() => {
   /* ---------- jobs: shared by the Web Worker and the main-thread fallback ---------- */
   // progress({stage, frac}) reports 0..1 over the whole job. Returns {result, transfer}.
   // stage start points, from measured relative cost (flatten dominates)
-  const STAGE_AT = { detect: 0, warp: 0.1, flatten: 0.28, lines: 0.8, mask: 0.88, specks: 0.95, done: 1 };
+  const STAGE_AT = { detect: 0, warp: 0.1, flatten: 0.28, lines: 0.75, mask: 0.83, specks: 0.9, colour: 0.94, done: 1 };
   function runJob(job, progress = () => {}) {
     const at = stage => progress({ stage, frac: STAGE_AT[stage] });
     if (job.type === 'ping') return { result: 'pong', transfer: [] };
@@ -590,9 +677,9 @@ const HW = (() => {
       const { rgba, w, h, level } = job; let corners = job.corners;
       if (!corners) { at('detect'); corners = detectPage(rgba, w, h); }
       at('warp'); const wr = warp(rgba, w, h, corners);
-      const gray = cleanPage(wr, A4W, A4H, level, at);
+      const { gray, color } = cleanPage(wr, A4W, A4H, level, at);
       at('done');
-      return { result: { corners, warp: wr, gray }, transfer: [wr.buffer, gray.buffer] };
+      return { result: { corners, warp: wr, gray, color }, transfer: [wr.buffer, gray.buffer].concat(color ? [color.buffer] : []) };
     }
     throw new Error('unknown job ' + job.type);
   }
@@ -762,7 +849,7 @@ const Engine = {
 Engine.start();
 
 const STAGE_TEXT = { detect: 'หาขอบกระดาษ', warp: 'ปรับภาพให้ตรง', flatten: 'ลบเงาบนกระดาษ', lines: 'เก็บเส้นและขอบกล่อง',
-  mask: 'ลบรอยดินสอ สีเทียน และปากกาแดง', specks: 'เก็บกวาดจุดเล็ก ๆ', done: 'กำลังบันทึก' };
+  mask: 'ลบรอยดินสอ สีเทียน และปากกาแดง', specks: 'เก็บกวาดจุดเล็ก ๆ', colour: 'เก็บสีของรูปภาพ', done: 'กำลังบันทึก' };
 
 /* ---------------- processing ---------------- */
 /* onProgress({stage, frac}) */
@@ -776,7 +863,9 @@ async function processPage(p, onProgress) {
   const wc = document.createElement('canvas'); wc.width = W; wc.height = H;
   wc.getContext('2d').putImageData(new ImageData(r.warp, W, H), 0, 0);
   p.warp = await toBlob(wc, 'image/jpeg', 0.85);
-  const cc = grayToCanvas(r.gray);
+  let cc;  // colour worksheets keep their printed pictures in colour; others stay greyscale
+  if (r.color) { cc = document.createElement('canvas'); cc.width = W; cc.height = H; cc.getContext('2d').putImageData(new ImageData(r.color, W, H), 0, 0); }
+  else cc = grayToCanvas(r.gray);
   p.clean = await toBlob(cc, 'image/png'); p.thumb = thumbOf(cc);
   await DB.put(p);
 }
@@ -835,7 +924,7 @@ async function openEditor(i) {
   ctx.drawImage(img, 0, 0, W, H);
   ED.img = ctx.getImageData(0, 0, W, H);
   const g = new Uint8Array(W * H), d = ED.img.data;
-  for (let k = 0; k < g.length; k++) g[k] = d[k * 4];
+  for (let k = 0, j = 0; k < g.length; k++, j += 4) g[k] = (d[j] * 77 + d[j + 1] * 150 + d[j + 2] * 29) >> 8;  // same luminance as core
   const maps = await Engine.run(() => { const c = g.slice(); return { job: { type: 'maps', gray: c, W, H }, transfer: [c.buffer] }; });
   ED.gray = g; ED.M = maps.M; ED.V = maps.V; ED.undo = []; ED.dirty = false; ED.orig = null;
   $('tUndo').disabled = true;
@@ -879,11 +968,17 @@ $('fitBtn').onclick = fit;
 window.addEventListener('resize', () => { if (!$('editor').hidden) fit(); if (!$('crop').hidden) CR.layout(); });
 function toImg(cx, cy) { const r = stage.getBoundingClientRect(); return [(cx - r.left - ED.tx) / ED.z, (cy - r.top - ED.ty) / ED.z]; }
 
-/* pixel updates */
-function paint(idx) {
+/* pixel updates: ED.img holds the page colours, ED.gray its luminance (used by tap-to-clear and the eraser) */
+function grab(idx, into = []) {  // current colours of idx, saved before an edit so undo can restore colour pictures
+  const d = ED.img.data;
+  for (let k = 0; k < idx.length; k++) { const j = idx[k] * 4; into.push(d[j], d[j + 1], d[j + 2]); }
+  return into;
+}
+function paint(idx, rgb) {  // rgb: colours to restore (undo); otherwise grey from ED.gray
   const d = ED.img.data; let x0 = W, y0 = H, x1 = -1, y1 = -1;
   for (let k = 0; k < idx.length; k++) {
-    const i = idx[k], v = ED.gray[i], j = i * 4; d[j] = d[j + 1] = d[j + 2] = v;
+    const i = idx[k], j = i * 4;
+    if (rgb) { d[j] = rgb[k * 3]; d[j + 1] = rgb[k * 3 + 1]; d[j + 2] = rgb[k * 3 + 2]; } else d[j] = d[j + 1] = d[j + 2] = ED.gray[i];
     const x = i % W, y = (i / W) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
   }
   if (x1 >= 0) ctx.putImageData(ED.img, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
@@ -896,7 +991,7 @@ function pushUndo(patch) {
 $('tUndo').onclick = () => {
   const u = ED.undo.pop(); if (!u) return;
   for (let k = 0; k < u.idx.length; k++) ED.gray[u.idx[k]] = u.old[k];
-  paint(u.idx); ED.dirty = true; $('tUndo').disabled = !ED.undo.length;
+  paint(u.idx, u.rgb); ED.dirty = true; $('tUndo').disabled = !ED.undo.length;
 };
 
 /* compare with original */
@@ -920,7 +1015,7 @@ function doTap(ix, iy) {
   const r = HW.tapRegion(ED.gray, ED.M, W, H, ix, iy);
   if (!r) return toast('ไม่พบกรอบหรือเส้นตรงนี้ ลองแตะกลางกล่อง หรือใช้ยางลบ');
   if (r.blocked) { flash(r, 'rgba(228,92,132,.28)'); return toast('ในกรอบนี้มีตัวพิมพ์ ใช้ยางลบแทนเพื่อไม่ให้โจทย์หาย'); }
-  const patch = HW.wipe(ED.gray, ED.M, W, r); paint(patch.idx); pushUndo(patch);
+  const patch = HW.wipe(ED.gray, ED.M, W, r); patch.rgb = Uint8Array.from(grab(patch.idx)); paint(patch.idx); pushUndo(patch);
   flash(r, 'rgba(45,91,208,.22)');
 }
 
@@ -935,7 +1030,7 @@ function eraseAt(x, y) {
     const i = yy * W + xx; if (g[i] === 255 || (keep && (M[i] || V[i]))) continue;
     stroke.idx.push(i); stroke.old.push(g[i]); g[i] = 255; ch.push(i);
   }
-  paint(ch);
+  grab(ch, stroke.rgb); paint(ch);
 }
 function eraseTo(x, y) {
   const r = +$('bSize').value, [px, py] = stroke.last, dist = Math.hypot(x - px, y - py), n = Math.max(1, Math.ceil(dist / (r * 0.4)));
@@ -946,7 +1041,7 @@ function eraseTo(x, y) {
 }
 function endStroke() {
   if (!stroke) return;
-  pushUndo({ idx: Int32Array.from(stroke.idx), old: Uint8Array.from(stroke.old) });
+  pushUndo({ idx: Int32Array.from(stroke.idx), old: Uint8Array.from(stroke.old), rgb: Uint8Array.from(stroke.rgb) });
   stroke = null; octx.clearRect(0, 0, W, H);
 }
 
@@ -979,7 +1074,7 @@ stage.addEventListener('pointermove', e => {
   const dx = e.clientX - single.x, dy = e.clientY - single.y;
   if (!single.moved && Math.hypot(dx, dy) > 6) {
     single.moved = true;
-    if (ED.tool === 'erase') { const [ix, iy] = toImg(single.x, single.y); stroke = { idx: [], old: [], last: [ix, iy] }; eraseAt(ix, iy); }
+    if (ED.tool === 'erase') { const [ix, iy] = toImg(single.x, single.y); stroke = { idx: [], old: [], rgb: [], last: [ix, iy] }; eraseAt(ix, iy); }
   }
   if (!single.moved) return;
   if (ED.tool === 'tap') { ED.tx = single.tx + dx; ED.ty = single.ty + dy; applyT(); }
@@ -994,7 +1089,7 @@ function up(e) {
       const [ix, iy] = toImg(single.x, single.y);
       if (ix >= 0 && iy >= 0 && ix < W && iy < H) {
         if (ED.tool === 'tap') doTap(ix, iy);
-        else { stroke = { idx: [], old: [], last: [ix, iy] }; eraseAt(ix, iy); endStroke(); }
+        else { stroke = { idx: [], old: [], rgb: [], last: [ix, iy] }; eraseAt(ix, iy); endStroke(); }
       }
     }
     if (stroke) endStroke();
