@@ -39,7 +39,11 @@ button,label.btn,.tool{touch-action:manipulation;-webkit-touch-callout:none;-web
   linear-gradient(90deg,transparent 40px,var(--eraser) 40px,var(--eraser) 42px,transparent 42px),
   repeating-linear-gradient(180deg,transparent 0 27px,var(--rule) 27px 28px),var(--surface);
   border-bottom:1px solid var(--line)}
+.notebook .hrow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.langbtn{flex:none;min-width:44px;height:36px;padding:0 10px;margin:-8px -8px 0 0;border-radius:18px;border:1px solid var(--line);
+  background:var(--surface);font-weight:600;font-size:14px}
 .notebook h1{font:500 30px/1.2 var(--display);margin:0;letter-spacing:.01em}
+@media (max-width:420px){.notebook h1{font-size:26px}}
 .notebook p{margin:4px 0 0;color:var(--muted);max-width:34em}
 .home-body{flex:1;overflow:auto;padding:16px 16px 120px}
 .tips{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:16px}
@@ -112,26 +116,29 @@ button,label.btn,.tool{touch-action:manipulation;-webkit-touch-callout:none;-web
 <!-- ============ HOME ============ -->
 <section id="home" class="view">
   <header class="notebook">
-    <h1>ล้างการบ้าน</h1>
-    <p>ถ่ายรูปใบงานที่ทำแล้ว แอปจะลบคำตอบและรอยตรวจให้ แล้วรวมเป็น PDF ไว้ปริ๊นให้ลูกทำใหม่</p>
+    <div class="hrow">
+      <h1 data-i18n="appName">ล้างการบ้าน</h1>
+      <button class="langbtn" id="langBtn" lang="en" aria-label="Switch to English">EN</button>
+    </div>
+    <p data-i18n="tagline">ถ่ายรูปใบงานที่ทำแล้ว แอปจะลบคำตอบและรอยตรวจให้ แล้วรวมเป็น PDF ไว้ปริ๊นให้ลูกทำใหม่</p>
   </header>
   <div class="home-body">
     <details class="tips" id="tips">
-      <summary>ถ่ายรูปอย่างไรให้ลบได้สะอาด</summary>
+      <summary data-i18n="tipsTitle">ถ่ายรูปอย่างไรให้ลบได้สะอาด</summary>
       <ul>
-        <li>ถ่ายใกล้หน้าต่างหรือใต้ไฟ ไม่ให้มีเงามือหรือเงามือถือทับกระดาษ</li>
-        <li>ถ่ายตรงจากด้านบน ให้เห็นกระดาษครบทั้ง 4 มุม</li>
-        <li>วางกระดาษบนพื้นที่สีเข้มกว่ากระดาษ แอปจะหาขอบได้แม่นขึ้น</li>
+        <li data-i18n="tip1">ถ่ายใกล้หน้าต่างหรือใต้ไฟ ไม่ให้มีเงามือหรือเงามือถือทับกระดาษ</li>
+        <li data-i18n="tip2">ถ่ายตรงจากด้านบน ให้เห็นกระดาษครบทั้ง 4 มุม</li>
+        <li data-i18n="tip3">วางกระดาษบนพื้นที่สีเข้มกว่ากระดาษ แอปจะหาขอบได้แม่นขึ้น</li>
       </ul>
     </details>
     <div id="empty" class="empty">
-      <strong>ยังไม่มีหน้า</strong>
-      กด “เพิ่มหน้า” เพื่อถ่ายรูปหรือเลือกรูปจากคลังภาพ เลือกได้หลายรูปพร้อมกัน
+      <strong data-i18n="emptyTitle">ยังไม่มีหน้า</strong>
+      <span data-i18n="emptyText">กด “เพิ่มหน้า” เพื่อถ่ายรูปหรือเลือกรูปจากคลังภาพ เลือกได้หลายรูปพร้อมกัน</span>
     </div>
     <div id="grid" class="grid"></div>
   </div>
   <div class="dock">
-    <label class="btn" for="fileIn">＋ เพิ่มหน้า</label>
+    <label class="btn" for="fileIn" data-i18n="addPages">＋ เพิ่มหน้า</label>
     <button class="btn primary" id="exportBtn" disabled>สร้าง PDF</button>
   </div>
   <input type="file" id="fileIn" accept="image/*" multiple class="vh">
@@ -140,34 +147,34 @@ button,label.btn,.tool{touch-action:manipulation;-webkit-touch-callout:none;-web
 <!-- ============ EDITOR ============ -->
 <section id="editor" class="view" hidden>
   <div class="topbar">
-    <button class="btn" id="edBack">‹ ทุกหน้า</button>
-    <button class="icon" id="edPrev" aria-label="หน้าก่อนหน้า">◀</button>
+    <button class="btn" id="edBack" data-i18n="allPages">‹ ทุกหน้า</button>
+    <button class="icon" id="edPrev" data-i18n-aria="prevPage" aria-label="หน้าก่อนหน้า">◀</button>
     <div class="title" id="edTitle">หน้า 1</div>
-    <button class="icon" id="edNext" aria-label="หน้าถัดไป">▶</button>
-    <button class="btn" id="edCrop">ปรับกรอบ</button>
+    <button class="icon" id="edNext" data-i18n-aria="nextPage" aria-label="หน้าถัดไป">▶</button>
+    <button class="btn" id="edCrop" data-i18n="crop">ปรับกรอบ</button>
   </div>
   <div class="stage" id="stage">
     <div class="wrap" id="wrap"><canvas id="cv"></canvas><canvas id="ov" class="ov"></canvas></div>
     <div class="hint" id="hint"></div>
-    <button class="icon fitbtn" id="fitBtn" aria-label="พอดีจอ">⤢</button>
+    <button class="icon fitbtn" id="fitBtn" data-i18n-aria="fit" aria-label="พอดีจอ">⤢</button>
   </div>
   <div class="tools">
     <div class="toolrow">
-      <button class="tool" id="tTap" aria-pressed="true"><b>◻︎</b>แตะล้างกรอบ</button>
-      <button class="tool erase" id="tErase" aria-pressed="false"><b>◐</b>ยางลบ</button>
-      <button class="tool" id="tUndo" disabled><b>↶</b>ย้อนกลับ</button>
-      <button class="tool" id="tOrig"><b>◧</b>กดค้างดูต้นฉบับ</button>
+      <button class="tool" id="tTap" aria-pressed="true"><b>◻︎</b><span data-i18n="toolTap">แตะล้างกรอบ</span></button>
+      <button class="tool erase" id="tErase" aria-pressed="false"><b>◐</b><span data-i18n="toolErase">ยางลบ</span></button>
+      <button class="tool" id="tUndo" disabled><b>↶</b><span data-i18n="toolUndo">ย้อนกลับ</span></button>
+      <button class="tool" id="tOrig"><b>◧</b><span data-i18n="toolOrig">กดค้างดูต้นฉบับ</span></button>
     </div>
     <div class="subrow" id="eraseOpts" hidden>
-      <label>ขนาด <input type="range" id="bSize" min="8" max="90" value="28"></label>
-      <label><input type="checkbox" id="keepLines" checked> ไม่ลบเส้นและขอบกล่อง</label>
+      <label><span data-i18n="size">ขนาด</span> <input type="range" id="bSize" min="8" max="90" value="28"></label>
+      <label><input type="checkbox" id="keepLines" checked> <span data-i18n="keepLines">ไม่ลบเส้นและขอบกล่อง</span></label>
     </div>
     <div class="subrow">
-      <span>ความแรงการลบ</span>
+      <span data-i18n="strength">ความแรงการลบ</span>
       <div class="seg" id="levelSeg">
-        <button data-l="light" aria-pressed="false">เบา</button>
-        <button data-l="normal" aria-pressed="true">ปกติ</button>
-        <button data-l="strong" aria-pressed="false">แรง</button>
+        <button data-l="light" aria-pressed="false" data-i18n="light">เบา</button>
+        <button data-l="normal" aria-pressed="true" data-i18n="normal">ปกติ</button>
+        <button data-l="strong" aria-pressed="false" data-i18n="strong">แรง</button>
       </div>
     </div>
   </div>
@@ -176,18 +183,18 @@ button,label.btn,.tool{touch-action:manipulation;-webkit-touch-callout:none;-web
 <!-- ============ CROP ============ -->
 <section id="crop" class="view" hidden>
   <div class="topbar">
-    <button class="btn" id="crCancel">ยกเลิก</button>
-    <div class="title">ลากมุมให้ตรงขอบกระดาษ</div>
-    <button class="btn" id="crRotate">หมุน ⟳</button>
-    <button class="btn primary" id="crOk">ใช้กรอบนี้</button>
+    <button class="btn" id="crCancel" data-i18n="cancel">ยกเลิก</button>
+    <div class="title" data-i18n="cropTitle">ลากมุมให้ตรงขอบกระดาษ</div>
+    <button class="btn" id="crRotate" data-i18n="rotate">หมุน ⟳</button>
+    <button class="btn primary" id="crOk" data-i18n="useCrop">ใช้กรอบนี้</button>
   </div>
   <div class="stage" id="crStage">
     <canvas id="crCv" style="position:absolute;left:0;top:0"></canvas>
-    <div class="hint">เส้นสีน้ำเงินหนาคือด้านบนของกระดาษ</div>
+    <div class="hint" data-i18n="cropHint">เส้นสีน้ำเงินหนาคือด้านบนของกระดาษ</div>
   </div>
 </section>
 
-<div class="busy" id="busy" hidden><div><span id="busyText">กำลังทำงาน</span><small id="busySub"></small><div class="bar"><i id="busyBar"></i></div></div></div>
+<div class="busy" id="busy" hidden><div><span id="busyText">…</span><small id="busySub"></small><div class="bar"><i id="busyBar"></i></div></div></div>
 <div class="toast" id="toast" hidden></div>
 <div class="sheet" id="sheet" hidden><div class="panel" id="sheetPanel"></div></div>
 
@@ -705,6 +712,90 @@ const W = HW.A4W, H = HW.A4H;
 const $ = id => document.getElementById(id);
 const tick = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
 
+/* ---------------- language (Thai / English) ---------------- */
+/* Static text: data-i18n (textContent) and data-i18n-aria (aria-label). Values may be functions of t()'s arguments. */
+const I18N = {
+  th: {
+    appName: 'ล้างการบ้าน',
+    tagline: 'ถ่ายรูปใบงานที่ทำแล้ว แอปจะลบคำตอบและรอยตรวจให้ แล้วรวมเป็น PDF ไว้ปริ๊นให้ลูกทำใหม่',
+    tipsTitle: 'ถ่ายรูปอย่างไรให้ลบได้สะอาด',
+    tip1: 'ถ่ายใกล้หน้าต่างหรือใต้ไฟ ไม่ให้มีเงามือหรือเงามือถือทับกระดาษ',
+    tip2: 'ถ่ายตรงจากด้านบน ให้เห็นกระดาษครบทั้ง 4 มุม',
+    tip3: 'วางกระดาษบนพื้นที่สีเข้มกว่ากระดาษ แอปจะหาขอบได้แม่นขึ้น',
+    emptyTitle: 'ยังไม่มีหน้า',
+    emptyText: 'กด “เพิ่มหน้า” เพื่อถ่ายรูปหรือเลือกรูปจากคลังภาพ เลือกได้หลายรูปพร้อมกัน',
+    addPages: '＋ เพิ่มหน้า', makePdf: n => n ? `สร้าง PDF (${n} หน้า)` : 'สร้าง PDF',
+    page: n => `หน้า ${n}`, pageOf: (n, m) => `หน้า ${n} / ${m}`, editPage: n => `แก้ไขหน้า ${n}`,
+    moveUp: 'เลื่อนขึ้น', moveDown: 'เลื่อนลง', deletePage: 'ลบหน้า', confirmDelete: n => `ลบหน้า ${n} ออกจากชุดนี้?`,
+    allPages: '‹ ทุกหน้า', prevPage: 'หน้าก่อนหน้า', nextPage: 'หน้าถัดไป', crop: 'ปรับกรอบ', fit: 'พอดีจอ',
+    toolTap: 'แตะล้างกรอบ', toolErase: 'ยางลบ', toolUndo: 'ย้อนกลับ', toolOrig: 'กดค้างดูต้นฉบับ',
+    size: 'ขนาด', keepLines: 'ไม่ลบเส้นและขอบกล่อง', strength: 'ความแรงการลบ', light: 'เบา', normal: 'ปกติ', strong: 'แรง',
+    hintTap: 'แตะกลางกล่องคำตอบ หรือระหว่างเส้นบรรทัด ใช้สองนิ้วซูม', hintErase: 'ลากนิ้วถูรอยที่เหลือ ใช้สองนิ้วซูม',
+    tapNone: 'ไม่พบกรอบหรือเส้นตรงนี้ ลองแตะกลางกล่อง หรือใช้ยางลบ',
+    tapBlocked: 'ในกรอบนี้มีตัวพิมพ์ ใช้ยางลบแทนเพื่อไม่ให้โจทย์หาย',
+    confirmStrength: 'เปลี่ยนความแรงจะล้างหน้านี้ใหม่ทั้งหมด งานที่แก้ด้วยมือในหน้านี้จะหายไป ทำต่อไหม?',
+    confirmCrop: 'ปรับกรอบจะล้างหน้านี้ใหม่ งานที่แก้ด้วยมือในหน้านี้จะหายไป ทำต่อไหม?',
+    cancel: 'ยกเลิก', cropTitle: 'ลากมุมให้ตรงขอบกระดาษ', rotate: 'หมุน ⟳', useCrop: 'ใช้กรอบนี้',
+    cropHint: 'เส้นสีน้ำเงินหนาคือด้านบนของกระดาษ', corner: 'มุมกระดาษ',
+    cleaningPage: (n, m) => `กำลังล้างหน้า ${n} จาก ${m}`, openFailed: (n, e) => `เปิดรูปที่ ${n} ไม่ได้ ข้ามไป (${e})`,
+    openingPage: 'กำลังเปิดหน้า', openingPhoto: 'กำลังเปิดรูป', recleaning: 'กำลังล้างใหม่',
+    stage_open: 'เปิดรูป', stage_detect: 'หาขอบกระดาษ', stage_warp: 'ปรับภาพให้ตรง', stage_flatten: 'ลบเงาบนกระดาษ',
+    stage_lines: 'เก็บเส้นและขอบกล่อง', stage_mask: 'ลบรอยดินสอ สีเทียน และปากกาแดง', stage_specks: 'เก็บกวาดจุดเล็ก ๆ',
+    stage_colour: 'เก็บสีของรูปภาพ', stage_done: 'กำลังบันทึก',
+    pdfLibMissing: 'โหลดตัวสร้าง PDF ไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่',
+    makingPdf: (n, m) => `กำลังสร้าง PDF หน้า ${n} จาก ${m}`, pdfReady: 'PDF พร้อมแล้ว',
+    pdfInfo: (n, mb) => `${n} หน้า ขนาด ${mb} MB`, share: 'แชร์ หรือสั่งปริ๊น', download: 'ดาวน์โหลด PDF',
+    newSet: 'เริ่มชุดใหม่ (ลบงานชุดนี้จากเครื่อง)', close: 'ปิด', confirmNewSet: 'ลบทุกหน้าในชุดนี้ออกจากเครื่อง?'
+  },
+  en: {
+    appName: 'Homework Cleaner',
+    tagline: 'Photograph finished worksheets. The app removes the answers and marking, then makes one PDF to print so your child can practise again.',
+    tipsTitle: 'How to take photos that clean well',
+    tip1: 'Shoot near a window or under a light, with no shadow of your hand or phone on the paper',
+    tip2: 'Shoot straight from above, with all 4 corners of the paper in view',
+    tip3: 'Put the paper on a surface darker than the paper so the app finds the edges more accurately',
+    emptyTitle: 'No pages yet',
+    emptyText: 'Tap “Add pages” to take photos or choose them from your library. You can pick several at once.',
+    addPages: '＋ Add pages', makePdf: n => n ? `Make PDF (${n} ${n === 1 ? 'page' : 'pages'})` : 'Make PDF',
+    page: n => `Page ${n}`, pageOf: (n, m) => `Page ${n} / ${m}`, editPage: n => `Edit page ${n}`,
+    moveUp: 'Move up', moveDown: 'Move down', deletePage: 'Delete page', confirmDelete: n => `Remove page ${n} from this set?`,
+    allPages: '‹ All pages', prevPage: 'Previous page', nextPage: 'Next page', crop: 'Crop', fit: 'Fit to screen',
+    toolTap: 'Tap to clear', toolErase: 'Eraser', toolUndo: 'Undo', toolOrig: 'Hold for original',
+    size: 'Size', keepLines: 'Keep lines and box borders', strength: 'Cleaning strength', light: 'Light', normal: 'Normal', strong: 'Strong',
+    hintTap: 'Tap the middle of an answer box or between the lines. Use two fingers to zoom.',
+    hintErase: 'Drag your finger over leftover marks. Use two fingers to zoom.',
+    tapNone: 'No box or line found here. Tap the middle of the box, or use the eraser.',
+    tapBlocked: 'This box contains printed text. Use the eraser so the question is not lost.',
+    confirmStrength: 'Changing the strength cleans this page again. Your manual edits on this page will be lost. Continue?',
+    confirmCrop: 'Changing the crop cleans this page again. Your manual edits on this page will be lost. Continue?',
+    cancel: 'Cancel', cropTitle: 'Drag the corners to the paper edges', rotate: 'Rotate ⟳', useCrop: 'Use this crop',
+    cropHint: 'The thick blue edge is the top of the page', corner: 'Paper corner',
+    cleaningPage: (n, m) => `Cleaning page ${n} of ${m}`, openFailed: (n, e) => `Could not open photo ${n}, skipped (${e})`,
+    openingPage: 'Opening page', openingPhoto: 'Opening photo', recleaning: 'Cleaning again',
+    stage_open: 'Opening photo', stage_detect: 'Finding the paper edges', stage_warp: 'Straightening the page',
+    stage_flatten: 'Removing shadows', stage_lines: 'Keeping lines and box borders',
+    stage_mask: 'Removing pencil, crayon and red pen', stage_specks: 'Tidying small specks',
+    stage_colour: 'Keeping picture colours', stage_done: 'Saving',
+    pdfLibMissing: 'Could not load the PDF maker. Check your internet connection and try again.',
+    makingPdf: (n, m) => `Making PDF, page ${n} of ${m}`, pdfReady: 'PDF ready',
+    pdfInfo: (n, mb) => `${n} ${n === 1 ? 'page' : 'pages'}, ${mb} MB`, share: 'Share or print', download: 'Download PDF',
+    newSet: 'Start a new set (delete this set from the device)', close: 'Close', confirmNewSet: 'Delete every page in this set from the device?'
+  }
+};
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let lang = store.get('lang') || ((navigator.language || '').toLowerCase().startsWith('th') ? 'th' : 'en');
+const t = (key, ...a) => { const v = I18N[lang][key] ?? I18N.th[key]; return typeof v === 'function' ? v(...a) : v; };
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = t('appName');
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').content = t('appName');
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
+  const other = lang === 'th' ? 'en' : 'th', b = $('langBtn');
+  b.textContent = other === 'en' ? 'EN' : 'ไทย'; b.lang = other;
+  b.setAttribute('aria-label', other === 'en' ? 'Switch to English' : 'เปลี่ยนเป็นภาษาไทย');
+}
+
 /* ---------------- storage (IndexedDB) ---------------- */
 const DB = {
   db: null,
@@ -848,8 +939,6 @@ const Engine = {
 };
 Engine.start();
 
-const STAGE_TEXT = { detect: 'หาขอบกระดาษ', warp: 'ปรับภาพให้ตรง', flatten: 'ลบเงาบนกระดาษ', lines: 'เก็บเส้นและขอบกล่อง',
-  mask: 'ลบรอยดินสอ สีเทียน และปากกาแดง', specks: 'เก็บกวาดจุดเล็ก ๆ', colour: 'เก็บสีของรูปภาพ', done: 'กำลังบันทึก' };
 
 /* ---------------- processing ---------------- */
 /* onProgress({stage, frac}) */
@@ -870,18 +959,18 @@ async function processPage(p, onProgress) {
   await DB.put(p);
 }
 /* busy-overlay progress for one page; [a, b] is this page's slice of the whole bar */
-const pageProgress = (text, a = 0, b = 1) => s => busy(text, a + (b - a) * s.frac, STAGE_TEXT[s.stage]);
+const pageProgress = (text, a = 0, b = 1) => s => busy(text, a + (b - a) * s.frac, t('stage_' + s.stage));
 
 async function addFiles(files) {
   const list = [...files]; if (!list.length) return;
   for (let i = 0; i < list.length; i++) {
-    const text = `กำลังล้างหน้า ${i + 1} จาก ${list.length}`;
-    busy(text, i / list.length, 'เปิดรูป'); await tick();
+    const text = t('cleaningPage', i + 1, list.length);
+    busy(text, i / list.length, t('stage_open')); await tick();
     try {
       const sc = await imageToCanvas(list[i], 2400);
       const p = { id: uid(), level: 'normal', src: await toBlob(sc, 'image/jpeg', 0.9) };
       await processPage(p, pageProgress(text, i / list.length, (i + 1) / list.length)); pages.push(p); saveOrder(); renderGrid();
-    } catch (e) { console.error(e); toast(`เปิดรูปที่ ${i + 1} ไม่ได้ ข้ามไป (${e && e.message || e})`, 5000); }
+    } catch (e) { console.error(e); toast(t('openFailed', i + 1, e && e.message || e), 5000); }
   }
   busy(null); renderGrid();
 }
@@ -891,18 +980,18 @@ function renderGrid() {
   const g = $('grid'); g.innerHTML = '';
   $('empty').hidden = pages.length > 0;
   $('exportBtn').disabled = !pages.length;
-  $('exportBtn').textContent = pages.length ? `สร้าง PDF (${pages.length} หน้า)` : 'สร้าง PDF';
+  $('exportBtn').textContent = t('makePdf', pages.length);
   pages.forEach((p, i) => {
     const el = document.createElement('div'); el.className = 'card';
-    el.innerHTML = `<button class="thumb" aria-label="แก้ไขหน้า ${i + 1}"><img alt="" src="${p.thumb}"></button>
-      <div class="row"><span>หน้า ${i + 1}</span>
-      <button class="icon" data-a="up" aria-label="เลื่อนขึ้น" ${i ? '' : 'disabled'}>↑</button>
-      <button class="icon" data-a="down" aria-label="เลื่อนลง" ${i < pages.length - 1 ? '' : 'disabled'}>↓</button>
-      <button class="icon" data-a="del" aria-label="ลบหน้า">✕</button></div>`;
+    el.innerHTML = `<button class="thumb" aria-label="${t('editPage', i + 1)}"><img alt="" src="${p.thumb}"></button>
+      <div class="row"><span>${t('page', i + 1)}</span>
+      <button class="icon" data-a="up" aria-label="${t('moveUp')}" ${i ? '' : 'disabled'}>↑</button>
+      <button class="icon" data-a="down" aria-label="${t('moveDown')}" ${i < pages.length - 1 ? '' : 'disabled'}>↓</button>
+      <button class="icon" data-a="del" aria-label="${t('deletePage')}">✕</button></div>`;
     el.querySelector('.thumb').onclick = () => openEditor(i);
     el.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
       const a = b.dataset.a;
-      if (a === 'del') { if (!confirm(`ลบหน้า ${i + 1} ออกจากชุดนี้?`)) return; await DB.del(p.id); pages.splice(i, 1); }
+      if (a === 'del') { if (!confirm(t('confirmDelete', i + 1))) return; await DB.del(p.id); pages.splice(i, 1); }
       else { const j = a === 'up' ? i - 1 : i + 1; [pages[i], pages[j]] = [pages[j], pages[i]]; }
       saveOrder(); renderGrid();
     });
@@ -918,7 +1007,7 @@ cv.width = ov.width = W; cv.height = ov.height = H;
 
 async function openEditor(i) {
   if (ED.i >= 0 && ED.i !== i) await saveEditor();
-  busy('กำลังเปิดหน้า', 0.5); await tick();
+  busy(t('openingPage'), 0.5); await tick();
   ED.i = i; const p = pages[i];
   const img = await blobToImage(p.clean);
   ctx.drawImage(img, 0, 0, W, H);
@@ -928,7 +1017,7 @@ async function openEditor(i) {
   const maps = await Engine.run(() => { const c = g.slice(); return { job: { type: 'maps', gray: c, W, H }, transfer: [c.buffer] }; });
   ED.gray = g; ED.M = maps.M; ED.V = maps.V; ED.undo = []; ED.dirty = false; ED.orig = null;
   $('tUndo').disabled = true;
-  $('edTitle').textContent = `หน้า ${i + 1} / ${pages.length}`;
+  $('edTitle').textContent = t('pageOf', i + 1, pages.length);
   $('edPrev').disabled = i === 0; $('edNext').disabled = i === pages.length - 1;
   [...$('levelSeg').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.l === (p.level || 'normal')));
   show('editor'); busy(null); fit(); setTool(ED.tool);
@@ -950,8 +1039,7 @@ function setTool(t) {
   $('tTap').setAttribute('aria-pressed', t === 'tap'); $('tErase').setAttribute('aria-pressed', t === 'erase');
   $('eraseOpts').hidden = t !== 'erase';
   $('hint').textContent = t === 'tap'
-    ? 'แตะกลางกล่องคำตอบ หรือระหว่างเส้นบรรทัด ใช้สองนิ้วซูม'
-    : 'ลากนิ้วถูรอยที่เหลือ ใช้สองนิ้วซูม';
+    ? t('hintTap') : t('hintErase');
 }
 $('tTap').onclick = () => setTool('tap');
 $('tErase').onclick = () => setTool('erase');
@@ -1013,8 +1101,8 @@ function flash(r, color) {
 }
 function doTap(ix, iy) {
   const r = HW.tapRegion(ED.gray, ED.M, W, H, ix, iy);
-  if (!r) return toast('ไม่พบกรอบหรือเส้นตรงนี้ ลองแตะกลางกล่อง หรือใช้ยางลบ');
-  if (r.blocked) { flash(r, 'rgba(228,92,132,.28)'); return toast('ในกรอบนี้มีตัวพิมพ์ ใช้ยางลบแทนเพื่อไม่ให้โจทย์หาย'); }
+  if (!r) return toast(t('tapNone'));
+  if (r.blocked) { flash(r, 'rgba(228,92,132,.28)'); return toast(t('tapBlocked')); }
   const patch = HW.wipe(ED.gray, ED.M, W, r); patch.rgb = Uint8Array.from(grab(patch.idx)); paint(patch.idx); pushUndo(patch);
   flash(r, 'rgba(45,91,208,.22)');
 }
@@ -1108,9 +1196,9 @@ stage.addEventListener('wheel', e => {
 $('levelSeg').onclick = async e => {
   const b = e.target.closest('button'); if (!b) return;
   const p = pages[ED.i], l = b.dataset.l; if (l === (p.level || 'normal')) return;
-  if ((ED.undo.length || ED.dirty) && !confirm('เปลี่ยนความแรงจะล้างหน้านี้ใหม่ทั้งหมด งานที่แก้ด้วยมือในหน้านี้จะหายไป ทำต่อไหม?')) return;
-  p.level = l; ED.dirty = false; busy('กำลังล้างใหม่', 0); await tick();
-  await processPage(p, pageProgress('กำลังล้างใหม่')); busy(null); openEditor(ED.i);
+  if ((ED.undo.length || ED.dirty) && !confirm(t('confirmStrength'))) return;
+  p.level = l; ED.dirty = false; busy(t('recleaning'), 0); await tick();
+  await processPage(p, pageProgress(t('recleaning'))); busy(null); openEditor(ED.i);
 };
 
 /* ---------------- crop ---------------- */
@@ -1119,8 +1207,8 @@ const CR = {
   async open() {
     await saveEditor();
     const p = pages[ED.i];
-    if ((ED.undo.length) && !confirm('ปรับกรอบจะล้างหน้านี้ใหม่ งานที่แก้ด้วยมือในหน้านี้จะหายไป ทำต่อไหม?')) return;
-    busy('กำลังเปิดรูป', 0.5); await tick();
+    if ((ED.undo.length) && !confirm(t('confirmCrop'))) return;
+    busy(t('openingPhoto'), 0.5); await tick();
     this.c = await imageToCanvas(p.src, 2400); this.pts = p.corners.map(q => q.slice());
     show('crop'); busy(null); this.layout();
   },
@@ -1132,7 +1220,7 @@ const CR = {
     cc.style.left = this.ox + 'px'; cc.style.top = this.oy + 'px';
     this.handles.forEach(h => h.remove()); this.handles = [];
     this.pts.forEach((q, n) => {
-      const h = document.createElement('div'); h.className = 'handle'; h.setAttribute('aria-label', 'มุมกระดาษ');
+      const h = document.createElement('div'); h.className = 'handle'; h.setAttribute('aria-label', t('corner'));
       st.appendChild(h); this.handles.push(h);
       h.addEventListener('pointerdown', e => { h.setPointerCapture(e.pointerId); h._drag = true; });
       h.addEventListener('pointermove', e => {
@@ -1159,8 +1247,8 @@ $('edCrop').onclick = () => CR.open();
 $('crCancel').onclick = () => { show('editor'); fit(); };
 $('crRotate').onclick = () => { const q = CR.pts; CR.pts = [q[3], q[0], q[1], q[2]]; CR.draw(); };
 $('crOk').onclick = async () => {
-  const p = pages[ED.i]; p.corners = CR.pts; busy('กำลังล้างใหม่', 0); await tick();
-  await processPage(p, pageProgress('กำลังล้างใหม่')); busy(null); ED.dirty = false; openEditor(ED.i);
+  const p = pages[ED.i]; p.corners = CR.pts; busy(t('recleaning'), 0); await tick();
+  await processPage(p, pageProgress(t('recleaning'))); busy(null); ED.dirty = false; openEditor(ED.i);
 };
 
 /* ---------------- export ---------------- */
@@ -1168,11 +1256,11 @@ function openSheet(html) { $('sheetPanel').innerHTML = html; $('sheet').hidden =
 const closeSheet = () => $('sheet').hidden = true;
 $('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
 $('exportBtn').onclick = async () => {
-  if (!window.jspdf) return toast('โหลดตัวสร้าง PDF ไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+  if (!window.jspdf) return toast(t('pdfLibMissing'));
   const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
   const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
   for (let i = 0; i < pages.length; i++) {
-    busy(`กำลังสร้าง PDF หน้า ${i + 1} จาก ${pages.length}`, i / pages.length); await tick();
+    busy(t('makingPdf', i + 1, pages.length), i / pages.length); await tick();
     x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(await blobToImage(pages[i].clean), 0, 0, W, H);
     if (i) doc.addPage();
     doc.addImage(c.toDataURL('image/jpeg', 0.82), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
@@ -1181,21 +1269,26 @@ $('exportBtn').onclick = async () => {
   const d = new Date(), name = `homework-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.pdf`;
   const blob = doc.output('blob'), file = new File([blob], name, { type: 'application/pdf' });
   const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
-  openSheet(`<h2>PDF พร้อมแล้ว</h2><p>${pages.length} หน้า ขนาด ${(blob.size / 1048576).toFixed(1)} MB</p>
-    ${canShare ? '<button class="btn primary" id="shShare">แชร์ หรือสั่งปริ๊น</button>' : ''}
-    <button class="btn ${canShare ? '' : 'primary'}" id="shDl">ดาวน์โหลด PDF</button>
-    <button class="btn" id="shNew">เริ่มชุดใหม่ (ลบงานชุดนี้จากเครื่อง)</button>
-    <button class="linkbtn" id="shClose">ปิด</button>`);
+  openSheet(`<h2>${t('pdfReady')}</h2><p>${t('pdfInfo', pages.length, (blob.size / 1048576).toFixed(1))}</p>
+    ${canShare ? `<button class="btn primary" id="shShare">${t('share')}</button>` : ''}
+    <button class="btn ${canShare ? '' : 'primary'}" id="shDl">${t('download')}</button>
+    <button class="btn" id="shNew">${t('newSet')}</button>
+    <button class="linkbtn" id="shClose">${t('close')}</button>`);
   if (canShare) $('shShare').onclick = () => navigator.share({ files: [file], title: name }).catch(() => {});
   $('shDl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); };
-  $('shNew').onclick = async () => { if (!confirm('ลบทุกหน้าในชุดนี้ออกจากเครื่อง?')) return; await DB.clear(); pages = []; closeSheet(); renderGrid(); };
+  $('shNew').onclick = async () => { if (!confirm(t('confirmNewSet'))) return; await DB.clear(); pages = []; closeSheet(); renderGrid(); };
   $('shClose').onclick = closeSheet;
 };
 
 /* keep work safe when iOS backgrounds the tab */
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveEditor(); });
 
+$('langBtn').onclick = () => {
+  lang = lang === 'th' ? 'en' : 'th'; store.set('lang', lang); applyLang(); renderGrid();
+};
+
 /* ---------------- boot ---------------- */
+applyLang();
 (async () => {
   await DB.open();
   const all = (await DB.all()) || [], order = (await DB.getOrder()) || [];
