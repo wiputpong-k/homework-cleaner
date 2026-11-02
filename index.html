@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ล้างการบ้าน">
+<meta name="theme-color" content="#2D5BD0">
+<title>ล้างการบ้าน</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@500&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#EEF1F6; --surface:#FFFFFF; --ink:#1C2433; --muted:#5B6577; --line:#D5DBE5;
+  --accent:#2D5BD0; --accent-ink:#FFFFFF; --eraser:#E45C84; --stage:#D6DCE6; --rule:#C9D6F2;
+  --font:"Sarabun","Thonburi",system-ui,-apple-system,sans-serif; --display:"Mitr","Sarabun","Thonburi",system-ui,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161D; --surface:#1B212B; --ink:#E7ECF3; --muted:#9AA5B5; --line:#2C3542;
+  --accent:#7EA2FF; --accent-ink:#0E1420; --eraser:#F28AA8; --stage:#0C0F14; --rule:#26324A;}}
+:root[data-theme="dark"]{--bg:#12161D; --surface:#1B212B; --ink:#E7ECF3; --muted:#9AA5B5; --line:#2C3542;
+  --accent:#7EA2FF; --accent-ink:#0E1420; --eraser:#F28AA8; --stage:#0C0F14; --rule:#26324A;}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font);-webkit-tap-highlight-color:transparent}
+button,label.btn{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+button,label.btn,.tool{touch-action:manipulation;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.view{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto}
+
+/* ---------- home ---------- */
+.notebook{position:relative;padding:22px 20px 18px 56px;background:
+  linear-gradient(90deg,transparent 40px,var(--eraser) 40px,var(--eraser) 42px,transparent 42px),
+  repeating-linear-gradient(180deg,transparent 0 27px,var(--rule) 27px 28px),var(--surface);
+  border-bottom:1px solid var(--line)}
+.notebook h1{font:500 30px/1.2 var(--display);margin:0;letter-spacing:.01em}
+.notebook p{margin:4px 0 0;color:var(--muted);max-width:34em}
+.home-body{flex:1;overflow:auto;padding:16px 16px 120px}
+.tips{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+.tips summary{font-weight:600;cursor:pointer}
+.tips ul{margin:8px 0 2px;padding-left:20px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:40px 16px}
+.empty strong{display:block;color:var(--ink);font:500 20px/1.4 var(--display);margin-bottom:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card button.thumb{border:0;padding:0;background:#fff;display:block;aspect-ratio:210/297;width:100%}
+.card img{width:100%;height:100%;object-fit:contain;display:block}
+.card .row{display:flex;align-items:center;gap:2px;padding:4px 6px}
+.card .row span{flex:1;font-weight:600;font-size:14px}
+.icon{border:0;background:transparent;width:36px;height:36px;border-radius:8px;display:grid;place-items:center;font-size:17px}
+.icon:hover{background:var(--bg)}
+.icon:disabled{opacity:.3}
+.dock{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,transparent,var(--bg) 30%);display:flex;gap:10px;justify-content:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:12px;
+  border:1px solid var(--line);background:var(--surface);font-weight:600;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.dock .btn{flex:1;max-width:260px}
+
+/* ---------- editor / crop ---------- */
+.topbar{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar .title{flex:1;text-align:center;font-weight:600}
+.topbar .btn{min-height:40px;padding:0 12px}
+.stage{flex:1;position:relative;overflow:hidden;background:var(--stage);touch-action:none;user-select:none;-webkit-user-select:none}
+.wrap{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:0 2px 14px rgba(0,0,0,.18)}
+.wrap canvas{display:block}
+.wrap canvas.ov{position:absolute;left:0;top:0;pointer-events:none}
+.hint{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:rgba(28,36,51,.86);color:#fff;
+  font-size:13px;padding:5px 12px;border-radius:20px;pointer-events:none;max-width:92%;text-align:center}
+.fitbtn{position:absolute;right:10px;bottom:10px;background:var(--surface);border:1px solid var(--line)}
+.tools{background:var(--surface);border-top:1px solid var(--line);padding:8px 10px}
+.toolrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.tool{flex:1;max-width:120px;min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--surface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;gap:0;padding:4px}
+.tool b{font-size:19px;line-height:1.2;font-weight:400}
+.tool[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tool.erase[aria-pressed="true"]{background:var(--eraser);border-color:var(--eraser);color:#fff}
+.subrow{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:14px;color:var(--muted)}
+.subrow input[type=range]{width:140px;accent-color:var(--eraser)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:7px 12px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;padding:6px}
+.handle{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:rgba(45,91,208,.25);
+  border:3px solid var(--accent);touch-action:none}
+
+/* ---------- overlays ---------- */
+.busy{position:fixed;inset:0;background:rgba(18,22,29,.55);display:grid;place-items:center;z-index:20}
+.busy div{background:var(--surface);padding:20px 26px;border-radius:14px;font-weight:600;text-align:center;min-width:220px}
+.busy small{display:block;min-height:1.4em;margin-top:2px;color:var(--muted);font-weight:400;font-size:14px}
+.bar{height:6px;background:var(--line);border-radius:3px;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);
+  padding:10px 16px;border-radius:12px;font-size:14px;z-index:30;max-width:90%;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.sheet{position:fixed;inset:0;background:rgba(18,22,29,.5);display:flex;align-items:flex-end;justify-content:center;z-index:25}
+.sheet .panel{background:var(--surface);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));display:grid;gap:10px}
+.sheet h2{font:500 22px/1.3 var(--display);margin:0 0 4px}
+.sheet p{margin:0 0 6px;color:var(--muted)}
+@media (min-width:700px){.sheet{align-items:center}.sheet .panel{border-radius:18px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<section id="home" class="view">
+  <header class="notebook">
+    <h1>ล้างการบ้าน</h1>
+    <p>ถ่ายรูปใบงานที่ทำแล้ว แอปจะลบคำตอบและรอยตรวจให้ แล้วรวมเป็น PDF ไว้ปริ๊นให้ลูกทำใหม่</p>
+  </header>
+  <div class="home-body">
+    <details class="tips" id="tips">
+      <summary>ถ่ายรูปอย่างไรให้ลบได้สะอาด</summary>
+      <ul>
+        <li>ถ่ายใกล้หน้าต่างหรือใต้ไฟ ไม่ให้มีเงามือหรือเงามือถือทับกระดาษ</li>
+        <li>ถ่ายตรงจากด้านบน ให้เห็นกระดาษครบทั้ง 4 มุม</li>
+        <li>วางกระดาษบนพื้นที่สีเข้มกว่ากระดาษ แอปจะหาขอบได้แม่นขึ้น</li>
+      </ul>
+    </details>
+    <div id="empty" class="empty">
+      <strong>ยังไม่มีหน้า</strong>
+      กด “เพิ่มหน้า” เพื่อถ่ายรูปหรือเลือกรูปจากคลังภาพ เลือกได้หลายรูปพร้อมกัน
+    </div>
+    <div id="grid" class="grid"></div>
+  </div>
+  <div class="dock">
+    <label class="btn" for="fileIn">＋ เพิ่มหน้า</label>
+    <button class="btn primary" id="exportBtn" disabled>สร้าง PDF</button>
+  </div>
+  <input type="file" id="fileIn" accept="image/*" multiple class="vh">
+</section>
+
+<!-- ============ EDITOR ============ -->
+<section id="editor" class="view" hidden>
+  <div class="topbar">
+    <button class="btn" id="edBack">‹ ทุกหน้า</button>
+    <button class="icon" id="edPrev" aria-label="หน้าก่อนหน้า">◀</button>
+    <div class="title" id="edTitle">หน้า 1</div>
+    <button class="icon" id="edNext" aria-label="หน้าถัดไป">▶</button>
+    <button class="btn" id="edCrop">ปรับกรอบ</button>
+  </div>
+  <div class="stage" id="stage">
+    <div class="wrap" id="wrap"><canvas id="cv"></canvas><canvas id="ov" class="ov"></canvas></div>
+    <div class="hint" id="hint"></div>
+    <button class="icon fitbtn" id="fitBtn" aria-label="พอดีจอ">⤢</button>
+  </div>
+  <div class="tools">
+    <div class="toolrow">
+      <button class="tool" id="tTap" aria-pressed="true"><b>◻︎</b>แตะล้างกรอบ</button>
+      <button class="tool erase" id="tErase" aria-pressed="false"><b>◐</b>ยางลบ</button>
+      <button class="tool" id="tUndo" disabled><b>↶</b>ย้อนกลับ</button>
+      <button class="tool" id="tOrig"><b>◧</b>กดค้างดูต้นฉบับ</button>
+    </div>
+    <div class="subrow" id="eraseOpts" hidden>
+      <label>ขนาด <input type="range" id="bSize" min="8" max="90" value="28"></label>
+      <label><input type="checkbox" id="keepLines" checked> ไม่ลบเส้นและขอบกล่อง</label>
+    </div>
+    <div class="subrow">
+      <span>ความแรงการลบ</span>
+      <div class="seg" id="levelSeg">
+        <button data-l="light" aria-pressed="false">เบา</button>
+        <button data-l="normal" aria-pressed="true">ปกติ</button>
+        <button data-l="strong" aria-pressed="false">แรง</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CROP ============ -->
+<section id="crop" class="view" hidden>
+  <div class="topbar">
+    <button class="btn" id="crCancel">ยกเลิก</button>
+    <div class="title">ลากมุมให้ตรงขอบกระดาษ</div>
+    <button class="btn" id="crRotate">หมุน ⟳</button>
+    <button class="btn primary" id="crOk">ใช้กรอบนี้</button>
+  </div>
+  <div class="stage" id="crStage">
+    <canvas id="crCv" style="position:absolute;left:0;top:0"></canvas>
+    <div class="hint">เส้นสีน้ำเงินหนาคือด้านบนของกระดาษ</div>
+  </div>
+</section>
+
+<div class="busy" id="busy" hidden><div><span id="busyText">กำลังทำงาน</span><small id="busySub"></small><div class="bar"><i id="busyBar"></i></div></div></div>
+<div class="toast" id="toast" hidden></div>
+<div class="sheet" id="sheet" hidden><div class="panel" id="sheetPanel"></div></div>
+
+<script id="core">
+/* ===== Homework cleaner core (no DOM) ===== */
+const HW = (() => {
+  const A4W = 1654, A4H = 2339; // A4 @ 200 dpi
+
+  function minMax(src, w, h, r, isMax) {
+    const tmp = new src.constructor(src.length), out = new src.constructor(src.length);
+    for (let y = 0; y < h; y++) {
+      const o = y * w;
+      for (let x = 0; x < w; x++) {
+        let m = src[o + x];
+        const a = x - r < 0 ? 0 : x - r, b = x + r >= w ? w - 1 : x + r;
+        for (let k = a; k <= b; k++) { const v = src[o + k]; if (isMax ? v > m : v < m) m = v; }
+        tmp[o + x] = m;
+      }
+    }
+    for (let x = 0; x < w; x++) {
+      for (let y = 0; y < h; y++) {
+        let m = tmp[y * w + x];
+        const a = y - r < 0 ? 0 : y - r, b = y + r >= h ? h - 1 : y + r;
+        for (let k = a; k <= b; k++) { const v = tmp[k * w + x]; if (isMax ? v > m : v < m) m = v; }
+        out[y * w + x] = m;
+      }
+    }
+    return out;
+  }
+
+  function boxBlur(src, w, h, r) {
+    const tmp = new Float32Array(src.length), out = new Float32Array(src.length);
+    for (let y = 0; y < h; y++) {
+      const o = y * w;
+      for (let x = 0; x < w; x++) {
+        let s = 0, n = 0;
+        for (let k = Math.max(0, x - r); k <= Math.min(w - 1, x + r); k++) { s += src[o + k]; n++; }
+        tmp[o + x] = s / n;
+      }
+    }
+    for (let x = 0; x < w; x++) {
+      for (let y = 0; y < h; y++) {
+        let s = 0, n = 0;
+        for (let k = Math.max(0, y - r); k <= Math.min(h - 1, y + r); k++) { s += tmp[k * w + x]; n++; }
+        out[y * w + x] = s / n;
+      }
+    }
+    return out;
+  }
+
+  /* ---------- page detection: returns corners TL,TR,BR,BL in source px ---------- */
+  function detectPage(rgba, w, h) {
+    const full = [[0, 0], [w - 1, 0], [w - 1, h - 1], [0, h - 1]];
+    const k = Math.min(1, 480 / Math.max(w, h));
+    const sw = Math.round(w * k), sh = Math.round(h * k);
+    let m = new Uint8Array(sw * sh);
+    for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) {
+      const sx = Math.min(w - 1, Math.floor(x / k)), sy = Math.min(h - 1, Math.floor(y / k));
+      const i = (sy * w + sx) * 4, r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      const s = mx ? (mx - mn) / mx : 0;
+      m[y * sw + x] = (s < 0.275 && mx > 110) ? 1 : 0;
+    }
+    m = minMax(m, sw, sh, 6, true); m = minMax(m, sw, sh, 6, false);
+    m = minMax(m, sw, sh, 6, false); m = minMax(m, sw, sh, 6, true);
+    const lab = new Int32Array(sw * sh), q = new Int32Array(sw * sh);
+    let best = 0, bestL = 0, L = 0;
+    for (let s = 0; s < sw * sh; s++) {
+      if (!m[s] || lab[s]) continue;
+      L++; let qh = 0, qt = 0, n = 0; q[qt++] = s; lab[s] = L;
+      while (qh < qt) {
+        const i = q[qh++]; n++;
+        const x = i % sw, y = (i / sw) | 0;
+        if (x > 0 && m[i - 1] && !lab[i - 1]) { lab[i - 1] = L; q[qt++] = i - 1; }
+        if (x < sw - 1 && m[i + 1] && !lab[i + 1]) { lab[i + 1] = L; q[qt++] = i + 1; }
+        if (y > 0 && m[i - sw] && !lab[i - sw]) { lab[i - sw] = L; q[qt++] = i - sw; }
+        if (y < sh - 1 && m[i + sw] && !lab[i + sw]) { lab[i + sw] = L; q[qt++] = i + sw; }
+      }
+      if (n > best) { best = n; bestL = L; }
+    }
+    if (best < 0.3 * sw * sh) return full;
+    let tl = [0, 0, 1e9], br = [0, 0, -1e9], tr = [0, 0, -1e9], bl = [0, 0, 1e9];
+    for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) {
+      if (lab[y * sw + x] !== bestL) continue;
+      const s = x + y, d = x - y;
+      if (s < tl[2]) tl = [x, y, s]; if (s > br[2]) br = [x, y, s];
+      if (d > tr[2]) tr = [x, y, d]; if (d < bl[2]) bl = [x, y, d];
+    }
+    return [tl, tr, br, bl].map(p => [Math.min(w - 1, p[0] / k), Math.min(h - 1, p[1] / k)]);
+  }
+
+  function homography(from, to) {
+    const A = [];
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = from[i], [u, v] = to[i];
+      A.push([x, y, 1, 0, 0, 0, -u * x, -u * y, u]);
+      A.push([0, 0, 0, x, y, 1, -v * x, -v * y, v]);
+    }
+    for (let c = 0; c < 8; c++) {
+      let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      [A[c], A[p]] = [A[p], A[c]];
+      for (let r = 0; r < 8; r++) {
+        if (r === c) continue;
+        const f = A[r][c] / A[c][c];
+        for (let k = c; k < 9; k++) A[r][k] -= f * A[c][k];
+      }
+    }
+    return A.map((row, i) => row[8] / row[i]).concat([1]);
+  }
+
+  /* ---------- perspective warp to A4 ---------- */
+  function warp(rgba, w, h, corners, W = A4W, H = A4H) {
+    const m = homography([[0, 0], [W - 1, 0], [W - 1, H - 1], [0, H - 1]], corners);
+    const out = new Uint8ClampedArray(W * H * 4);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const den = m[6] * x + m[7] * y + 1;
+      let sx = (m[0] * x + m[1] * y + m[2]) / den, sy = (m[3] * x + m[4] * y + m[5]) / den;
+      sx = sx < 0 ? 0 : sx > w - 1.001 ? w - 1.001 : sx; sy = sy < 0 ? 0 : sy > h - 1.001 ? h - 1.001 : sy;
+      const x0 = sx | 0, y0 = sy | 0, fx = sx - x0, fy = sy - y0;
+      const i00 = (y0 * w + x0) * 4, i10 = i00 + 4, i01 = i00 + w * 4, i11 = i01 + 4, o = (y * W + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        const a = rgba[i00 + c] + (rgba[i10 + c] - rgba[i00 + c]) * fx;
+        const b = rgba[i01 + c] + (rgba[i11 + c] - rgba[i01 + c]) * fx;
+        out[o + c] = a + (b - a) * fy;
+      }
+      out[o + 3] = 255;
+    }
+    return out;
+  }
+
+  function removeSpecks(g, W, H, minSize) {
+    const N = W * H, seen = new Uint8Array(N), q = new Int32Array(N);
+    for (let s = 0; s < N; s++) {
+      if (g[s] >= 200 || seen[s]) continue;
+      let qh = 0, qt = 0; q[qt++] = s; seen[s] = 1;
+      while (qh < qt) {
+        const i = q[qh++], x = i % W, y = (i / W) | 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const j = ny * W + nx; if (!seen[j] && g[j] < 200) { seen[j] = 1; q[qt++] = j; }
+        }
+      }
+      if (qt < minSize) for (let k = 0; k < qt; k++) g[q[k]] = 255;
+    }
+  }
+
+
+  /* Straight thin runs in the darkness map: horizontal (rows) and vertical (columns). */
+  function protectLines(d, W, H, SC) {
+    const N = W * H, P = new Uint8Array(N), T = 0.28;
+    const Lh = Math.round(22 * SC), Lv = Math.round(28 * SC), maxT = Math.max(4, Math.round(6 * SC));
+    const on = new Uint8Array(N); for (let i = 0; i < N; i++) on[i] = d[i] > T ? 1 : 0;
+    // thickness across the run direction
+    const vThick = new Uint8Array(N), hThick = new Uint8Array(N);
+    for (let x = 0; x < W; x++) { let y = 0; while (y < H) { if (!on[y * W + x]) { y++; continue; } let e = y; while (e < H && on[e * W + x]) e++; const t = Math.min(255, e - y); for (let k = y; k < e; k++) vThick[k * W + x] = t; y = e; } }
+    for (let y = 0; y < H; y++) { const o = y * W; let x = 0; while (x < W) { if (!on[o + x]) { x++; continue; } let e = x; while (e < W && on[o + e]) e++; const t = Math.min(255, e - x); for (let k = x; k < e; k++) hThick[o + k] = t; x = e; } }
+    // horizontal runs (gap <= 1) of thin pixels
+    const gapH = Math.max(3, Math.round(8 * SC));
+    for (let y = 0; y < H; y++) {
+      const o = y * W; let s = -1, last = -1;
+      for (let x = 0; x <= W; x++) {
+        const ok = x < W && on[o + x] && vThick[o + x] <= maxT;
+        if (ok) { if (s < 0) s = x; last = x; }
+        else if (s >= 0 && (x === W || x - last > gapH)) {
+          const len = last - s + 1;
+          if (len >= Lh) for (let k = s; k <= last; k++) P[o + k] = on[o + k] ? 1 : (len >= 3 * Lh && !on[o + k - W] && !on[o + k + W] ? 2 : 0);
+          s = -1;
+        }
+      }
+    }
+    // vertical runs
+    for (let x = 0; x < W; x++) {
+      let s = -1, last = -1;
+      for (let y = 0; y <= H; y++) {
+        const i = y * W + x, ok = y < H && on[i] && hThick[i] <= maxT;
+        if (ok) { if (s < 0) s = y; last = y; }
+        else if (s >= 0 && (y === H || y - last > gapH)) {
+          const len = last - s + 1;
+          if (len >= Lv) for (let k = s; k <= last; k++) { const j = k * W + x; if (on[j]) P[j] = 1; else if (len >= 2 * Lv && !P[j] && !on[j - 1] && !on[j + 1]) P[j] = 2; }
+          s = -1;
+        }
+      }
+    }
+    return P;
+  }
+
+  const LEVELS = { light: 0.60, normal: 0.68, strong: 0.76 };
+
+  /* ---------- auto clean: returns Uint8 grayscale ---------- */
+  function cleanPage(rgba, W, H, level = 'normal', onStage = () => {}) {
+    const seedT = LEVELS[level] || LEVELS.normal, SC = W / A4W;
+    onStage('flatten');
+    const B = 4, bw = Math.ceil(W / B), bh = Math.ceil(H / B), N = W * H;
+    const R = Math.max(2, Math.round(5 * SC));
+    const bg = [0, 1, 2].map(c => {
+      let a = new Float32Array(bw * bh);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const j = ((y / B) | 0) * bw + ((x / B) | 0), v = rgba[(y * W + x) * 4 + c];
+        if (v > a[j]) a[j] = v;
+      }
+      a = minMax(a, bw, bh, R, true); a = minMax(a, bw, bh, R, false);
+      for (let k = 0; k < 3; k++) a = boxBlur(a, bw, bh, 2);
+      return a;
+    });
+    const d = new Float32Array(N), gray = new Float32Array(N);
+    for (let y = 0; y < H; y++) {
+      let fy = (y + 0.5) / B - 0.5; fy = fy < 0 ? 0 : fy > bh - 1 ? bh - 1 : fy;
+      const y0 = Math.min(bh - 2, fy | 0), ty = fy - y0;
+      for (let x = 0; x < W; x++) {
+        let fx = (x + 0.5) / B - 0.5; fx = fx < 0 ? 0 : fx > bw - 1 ? bw - 1 : fx;
+        const x0 = Math.min(bw - 2, fx | 0), tx = fx - x0, j = y0 * bw + x0, i = y * W + x;
+        let mx = 0, mn = 1, sum = 0;
+        for (let c = 0; c < 3; c++) {
+          const a = bg[c], top = a[j] + (a[j + 1] - a[j]) * tx, bot = a[j + bw] + (a[j + bw + 1] - a[j + bw]) * tx;
+          const b = top + (bot - top) * ty;
+          let n = rgba[i * 4 + c] / (b > 1 ? b : 1); if (n > 1) n = 1;
+          if (n > mx) mx = n; if (n < mn) mn = n; sum += n;
+        }
+        const sat = mx > 1e-3 ? (mx - mn) / mx : 0, gv = sum / 3;
+        gray[i] = gv;
+        if (sat > 0.22) d[i] = mx > 0.45 ? 0 : 1 - mx;   // colored: bright = crayon/red pen -> drop
+        else d[i] = 1 - gv;
+      }
+    }
+    // --- protect thin straight printed strokes ("=", answer lines, box sides) that are too faint to seed ---
+    onStage('lines');
+    const prot = protectLines(d, W, H, SC);
+    onStage('mask');
+    const mask = new Uint8Array(N), q = new Int32Array(N); let qh = 0, qt = 0;
+    for (let i = 0; i < N; i++) if (d[i] > 0.35) mask[i] = 1;
+    for (let i = 0; i < N; i++) if (mask[i] === 1 && d[i] > seedT) { mask[i] = 2; q[qt++] = i; }
+    while (qh < qt) {
+      const i = q[qh++], x = i % W, y = (i / W) | 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const j = ny * W + nx; if (mask[j] === 1) { mask[j] = 2; q[qt++] = j; }
+      }
+    }
+    const out = new Uint8Array(N).fill(255);
+    for (let i = 0; i < N; i++) if (prot[i] === 1 && mask[i] !== 2) mask[i] = 2;
+    for (let i = 0; i < N; i++) if (mask[i] === 2) {
+      let t = (gray[i] - 0.15) / 0.6; t = t < 0 ? 0 : t > 1 ? 1 : t; out[i] = t * 255;
+    }
+    for (let i = 0; i < N; i++) if (prot[i] === 2 && out[i] > 110) out[i] = 110;  // heal line gaps (red tick / pencil crossings)
+    onStage('specks');
+    removeSpecks(out, W, H, Math.max(4, Math.round(12 * SC * SC)));
+    return out;
+  }
+
+  /* ---------- printed horizontal lines map ---------- */
+  const LINE_DARK = 180;
+  function lineMap(g, W, H) {
+    // horizontal printed lines; tolerant to slight tilt (±2 rows) from curved paper
+    const N = W * H, M = new Uint8Array(N), minRun = Math.round(34 * W / A4W);
+    const dk = new Uint8Array(N);
+    for (let i = 0; i < N; i++) dk[i] = g[i] < LINE_DARK ? 1 : 0;
+    for (let y = 0; y < H; y++) {
+      let start = -1, last = -1; const o = y * W;
+      for (let x = 0; x <= W; x++) {
+        let d = 0;
+        if (x < W) for (let k = -2; k <= 2 && !d; k++) { const yy = y + k; if (yy >= 0 && yy < H && dk[yy * W + x]) d = 1; }
+        if (d) { if (start < 0) start = x; last = x; }
+        else if (start >= 0 && (x === W || x - last > 2)) {
+          if (last - start + 1 >= minRun) for (let k = start; k <= last; k++) if (dk[o + k]) M[o + k] = 1;
+          start = -1;
+        }
+      }
+    }
+    // drop thick blobs (solid print / pictures) : keep pixels whose vertical dark run is thin
+    const maxT = Math.max(4, Math.round(7 * W / A4W));
+    for (let x = 0; x < W; x++) {
+      let y = 0;
+      while (y < H) {
+        if (!dk[y * W + x]) { y++; continue; }
+        let e = y; while (e < H && dk[e * W + x]) e++;
+        if (e - y > maxT) for (let k = y; k < e; k++) M[k * W + x] = 0;
+        y = e;
+      }
+    }
+    return M;
+  }
+
+  /* ---------- tap-to-clear: find answer region around (px,py) ---------- */
+  function tapRegion(g, M, W, H, px, py) {
+    px = Math.round(px); py = Math.round(py);
+    const SC = W / A4W;
+    const has = (x, y) => x >= 0 && x < W && y >= 0 && y < H && M[y * W + x] === 1;
+    const extent = p => {
+      const gapMax = Math.round(45 * SC); let l = p.x, r = p.x;
+      for (const dir of [-1, 1]) {
+        let cy = p.y, gap = 0;
+        for (let x = p.x + dir; x >= 0 && x < W; x += dir) {
+          let f = -1;
+          for (let dy = 0; dy <= 2 && f < 0; dy++) { if (has(x, cy + dy)) f = cy + dy; else if (has(x, cy - dy)) f = cy - dy; }
+          if (f >= 0) { cy = f; gap = 0; if (dir < 0) l = x; else r = x; }
+          else if (++gap > gapMax) break;
+        }
+      }
+      return { l, r };
+    };
+    const find = dir => {
+      const lim = Math.round(260 * SC);
+      for (let s = 2; s <= lim; s++) {
+        const y = py + dir * s; if (y < 0 || y >= H) return null;
+        for (let dx = -4; dx <= 4; dx++) if (has(px + dx, y)) {
+          const p = { x: px + dx, y }, e = extent(p);
+          if (e.r - e.l >= 45 * SC) return p;   // ignore short strokes (pencil bars, "=")
+          break;
+        }
+      }
+      return null;
+    };
+    const cov = (x, y0, y1) => {
+      let n = 0;
+      for (let y = y0; y <= y1; y++) {
+        let d = 0; for (let k = -1; k <= 1 && !d; k++) { const xx = x + k; if (xx >= 0 && xx < W && g[y * W + xx] < LINE_DARK) d = 1; }
+        n += d;
+      }
+      return n / Math.max(1, y1 - y0 + 1);
+    };
+    const bestSide = (a, b, t, bt) => {
+      const h = bt - t, m = Math.max(3, Math.round(0.15 * h));
+      let bx = null, bc = 0;
+      for (let x = Math.max(1, a); x <= Math.min(W - 2, b); x++) { const c = cov(x, t + m, bt - m); if (c > bc) { bc = c; bx = x; } }
+      return bc >= 0.7 ? bx : null;
+    };
+    const top = find(-1), bot = find(1);
+    let reg = null;
+    if (top && bot) {
+      const h = bot.y - top.y, et = extent(top), eb = extent(bot);
+      const L = Math.max(et.l, eb.l), R = Math.min(et.r, eb.r);
+      if (h >= 15 * SC && h <= 300 * SC && R - L > 45 * SC && px >= L - 8 && px <= R + 8) {
+        const t6 = Math.round(6 * SC), t14 = Math.round(14 * SC), wd = Math.round(6 * SC);
+        const lA = Math.min(et.l, eb.l) - t6, lB = Math.min(px - 5, Math.max(et.l, eb.l) + t14);
+        const rA = Math.max(px + 5, Math.min(et.r, eb.r) - t14), rB = Math.max(et.r, eb.r) + t6;
+        const Ls = bestSide(lA, lB, top.y, bot.y), Rs = bestSide(rA, rB, top.y, bot.y);
+        if (Ls !== null && Rs !== null) {
+          reg = { kind: 'box', x0: Ls - 2, x1: Rs + 2, y0: top.y - 4, y1: bot.y + 4, sides: [[Ls - wd, Ls + wd], [Rs - wd, Rs + wd]] };
+        } else if (h <= 90 * SC) {
+          reg = { kind: 'band', x0: L - 6, x1: R + Math.round(25 * SC), y0: top.y - Math.round(50 * SC), y1: bot.y + Math.round(14 * SC), sides: [] };
+        } else {
+          reg = { kind: 'box', x0: L, x1: R, y0: top.y - 4, y1: bot.y + 4, sides: [[L - wd, L + wd], [R - wd, R + wd]] };
+        }
+      }
+    }
+    if (!reg && bot && bot.y - py <= 110 * SC) {
+      const eb = extent(bot);
+      reg = { kind: 'line', x0: eb.l - 6, x1: eb.r + Math.round(25 * SC), y0: bot.y - Math.round(100 * SC), y1: bot.y + Math.round(12 * SC), sides: [] };
+    }
+    if (!reg) return null;
+    reg.x0 = Math.max(0, reg.x0); reg.y0 = Math.max(0, reg.y0);
+    reg.x1 = Math.min(W - 1, reg.x1); reg.y1 = Math.min(H - 1, reg.y1);
+    // guard: solid print inside (pictures, printed digits) -> refuse
+    let solid = 0, area = 0;
+    for (let y = reg.y0; y <= reg.y1; y++) for (let x = reg.x0; x <= reg.x1; x++) {
+      const i = y * W + x; if (M[i] || inSide(reg, x)) continue; area++; if (g[i] < 60) solid++;
+    }
+    reg.blocked = solid > 0.02 * area;
+    return reg;
+  }
+  function inSide(reg, x) { for (const s of reg.sides) if (x >= s[0] && x <= s[1]) return true; return false; }
+
+  /* apply region wipe; returns undo patch */
+  function wipe(g, M, W, reg) {
+    const idx = [], old = [];
+    for (let y = reg.y0; y <= reg.y1; y++) for (let x = reg.x0; x <= reg.x1; x++) {
+      const i = y * W + x; if (g[i] === 255 || M[i]) continue;
+      if (inSide(reg, x) && g[i] < LINE_DARK) continue;
+      idx.push(i); old.push(g[i]); g[i] = 255;
+    }
+    return { idx: Int32Array.from(idx), old: Uint8Array.from(old) };
+  }
+
+  function vLineMap(g, W, H) {
+    const M = new Uint8Array(W * H), L = Math.round(30 * W / A4W);
+    for (let x = 0; x < W; x++) {
+      let s = -1, last = -1;
+      for (let y = 0; y <= H; y++) {
+        let d = 0;
+        if (y < H) for (let k = -1; k <= 1 && !d; k++) { const xx = x + k; if (xx >= 0 && xx < W && g[y * W + xx] < LINE_DARK) d = 1; }
+        if (d) { if (s < 0) s = y; last = y; }
+        else if (s >= 0 && (y === H || y - last > 2)) { if (last - s + 1 >= L) for (let k = s; k <= last; k++) if (g[k * W + x] < LINE_DARK) M[k * W + x] = 1; s = -1; }
+      }
+    }
+    return M;
+  }
+
+  /* ---------- jobs: shared by the Web Worker and the main-thread fallback ---------- */
+  // progress({stage, frac}) reports 0..1 over the whole job. Returns {result, transfer}.
+  // stage start points, from measured relative cost (flatten dominates)
+  const STAGE_AT = { detect: 0, warp: 0.1, flatten: 0.28, lines: 0.8, mask: 0.88, specks: 0.95, done: 1 };
+  function runJob(job, progress = () => {}) {
+    const at = stage => progress({ stage, frac: STAGE_AT[stage] });
+    if (job.type === 'ping') return { result: 'pong', transfer: [] };
+    if (job.type === 'maps') {
+      const M = lineMap(job.gray, job.W, job.H), V = vLineMap(job.gray, job.W, job.H);
+      return { result: { M, V }, transfer: [M.buffer, V.buffer] };
+    }
+    if (job.type === 'process') {
+      const { rgba, w, h, level } = job; let corners = job.corners;
+      if (!corners) { at('detect'); corners = detectPage(rgba, w, h); }
+      at('warp'); const wr = warp(rgba, w, h, corners);
+      const gray = cleanPage(wr, A4W, A4H, level, at);
+      at('done');
+      return { result: { corners, warp: wr, gray }, transfer: [wr.buffer, gray.buffer] };
+    }
+    throw new Error('unknown job ' + job.type);
+  }
+  return { vLineMap, A4W, A4H, detectPage, warp, cleanPage, lineMap, tapRegion, wipe, runJob, LINE_DARK };
+})();
+/* Web Worker entry: the app starts this same source as a worker and posts {id, job}. */
+if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
+  self.onmessage = e => {
+    const { id, job } = e.data;
+    try {
+      const { result, transfer } = HW.runJob(job, p => self.postMessage({ id, progress: p }));
+      self.postMessage({ id, result }, transfer);
+    } catch (err) { self.postMessage({ id, error: String(err && err.message || err) }); }
+  };
+}
+
+
+</script>
+<script>
+(() => {
+'use strict';
+const W = HW.A4W, H = HW.A4H;
+const $ = id => document.getElementById(id);
+const tick = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+
+/* ---------------- storage (IndexedDB) ---------------- */
+const DB = {
+  db: null,
+  open() {
+    return new Promise(res => {
+      try {
+        const rq = indexedDB.open('homework-cleaner', 1);
+        rq.onupgradeneeded = () => { const d = rq.result; d.createObjectStore('pages', { keyPath: 'id' }); d.createObjectStore('meta'); };
+        rq.onsuccess = () => { this.db = rq.result; res(); };
+        rq.onerror = () => res();
+      } catch (e) { res(); }
+    });
+  },
+  tx(store, mode, fn) {
+    return new Promise(res => {
+      if (!this.db) return res(null);
+      try {
+        const t = this.db.transaction(store, mode), s = t.objectStore(store); const r = fn(s);
+        t.oncomplete = () => res(r && r.result !== undefined ? r.result : null); t.onerror = () => res(null);
+      } catch (e) { res(null); }
+    });
+  },
+  put(p) { const { id, src, corners, level, warp, clean, thumb } = p; return this.tx('pages', 'readwrite', s => s.put({ id, src, corners, level, warp, clean, thumb })); },
+  del(id) { return this.tx('pages', 'readwrite', s => s.delete(id)); },
+  all() { return this.tx('pages', 'readonly', s => s.getAll()); },
+  setOrder(ids) { return this.tx('meta', 'readwrite', s => s.put(ids, 'order')); },
+  getOrder() { return this.tx('meta', 'readonly', s => s.get('order')); },
+  clear() { return Promise.all([this.tx('pages', 'readwrite', s => s.clear()), this.tx('meta', 'readwrite', s => s.clear())]); }
+};
+
+/* ---------------- helpers ---------------- */
+let pages = [];
+const saveOrder = () => DB.setOrder(pages.map(p => p.id));
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, ms);
+}
+function busy(text, frac, sub) {
+  $('busy').hidden = text == null;
+  if (text != null) { $('busyText').textContent = text; $('busySub').textContent = sub || ''; $('busyBar').style.width = ((frac || 0) * 100) + '%'; }
+}
+const toBlob = (c, type, q) => new Promise(r => c.toBlob(r, type, q));
+/* Decode without blob: URLs (some embedded viewers block them).
+   1) createImageBitmap  2) data: URL via FileReader  3) blob: URL as last resort */
+const readDataURL = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
+async function loadImg(src) {
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('image load failed')); img.src = src; });
+  return img;
+}
+async function blobToImage(blob) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(blob, { imageOrientation: 'from-image' }); } catch (e) {}
+    try { return await createImageBitmap(blob); } catch (e) {}
+  }
+  try { return await loadImg(await readDataURL(blob)); } catch (e) {}
+  const url = URL.createObjectURL(blob);
+  try { return await loadImg(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
+}
+async function imageToCanvas(blob, maxSide) {
+  const img = await blobToImage(blob);
+  let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+  const k = Math.min(1, maxSide / Math.max(w, h));
+  w = Math.round(w * k); h = Math.round(h * k);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+  if (img.close) img.close();
+  return c;
+}
+function grayToCanvas(g) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d'), id = ctx.createImageData(W, H), d = id.data;
+  for (let i = 0, j = 0; i < g.length; i++, j += 4) { d[j] = d[j + 1] = d[j + 2] = g[i]; d[j + 3] = 255; }
+  ctx.putImageData(id, 0, 0); return c;
+}
+function thumbOf(c) {
+  const t = document.createElement('canvas'); t.width = 300; t.height = Math.round(300 * H / W);
+  t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); return t.toDataURL('image/jpeg', 0.7);
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ---------------- processing engine: Web Worker, main-thread fallback ---------------- */
+/* The worker runs the same inlined core source (script#core). Blob URL first, then data: URL
+   (some embedded viewers block one or the other); if neither answers a ping, jobs run here. */
+const Engine = {
+  w: null, seq: 0, jobs: new Map(), ready: null,
+  start() {
+    const src = $('core').textContent;
+    const makers = [
+      () => URL.createObjectURL(new Blob([src], { type: 'text/javascript' })),
+      () => 'data:text/javascript;charset=utf-8,' + encodeURIComponent(src)
+    ];
+    this.ready = (async () => {
+      for (const mk of makers) {
+        let url = null, w = null;
+        try { url = mk(); w = new Worker(url); } catch (e) { continue; }
+        const ok = await new Promise(res => {
+          const t = setTimeout(() => res(false), 4000);
+          w.onmessage = e => { clearTimeout(t); res(e.data.result === 'pong'); };
+          w.onerror = e => { e.preventDefault(); clearTimeout(t); res(false); };
+          w.postMessage({ id: 0, job: { type: 'ping' } });
+        });
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        if (ok) { this.attach(w); return true; }
+        w.terminate();
+      }
+      console.warn('Web Worker unavailable; processing on the main thread');
+      return false;
+    })();
+  },
+  attach(w) {
+    this.w = w;
+    w.onmessage = e => {
+      const { id, progress, result, error } = e.data, j = this.jobs.get(id); if (!j) return;
+      if (progress) return j.onProgress(progress);
+      this.jobs.delete(id);
+      error ? j.reject(new Error(error)) : j.resolve(result);
+    };
+    // a crashed worker (e.g. out of memory) is dropped; pending and later jobs fall back to the main thread
+    w.onerror = w.onmessageerror = e => {
+      if (e.preventDefault) e.preventDefault();
+      w.terminate(); this.w = null; this.ready = Promise.resolve(false);
+      for (const j of this.jobs.values()) j.reject(new Error('worker crashed'));
+      this.jobs.clear();
+    };
+  },
+  /* makeJob() -> {job, transfer}. It may be called twice: transferred buffers are gone after a failed post. */
+  async run(makeJob, onProgress = () => {}) {
+    if (await this.ready && this.w) {
+      try {
+        const { job, transfer } = await makeJob(), id = ++this.seq;
+        return await new Promise((resolve, reject) => {
+          this.jobs.set(id, { resolve, reject, onProgress });
+          this.w.postMessage({ id, job }, transfer);
+        });
+      } catch (e) { console.warn('worker job failed, retrying on the main thread', e); }
+    }
+    const { job } = await makeJob(); await tick();
+    return HW.runJob(job, onProgress).result;
+  }
+};
+Engine.start();
+
+const STAGE_TEXT = { detect: 'หาขอบกระดาษ', warp: 'ปรับภาพให้ตรง', flatten: 'ลบเงาบนกระดาษ', lines: 'เก็บเส้นและขอบกล่อง',
+  mask: 'ลบรอยดินสอ สีเทียน และปากกาแดง', specks: 'เก็บกวาดจุดเล็ก ๆ', done: 'กำลังบันทึก' };
+
+/* ---------------- processing ---------------- */
+/* onProgress({stage, frac}) */
+async function processPage(p, onProgress) {
+  const r = await Engine.run(async () => {
+    const sc = await imageToCanvas(p.src, 2400);
+    const rgba = sc.getContext('2d').getImageData(0, 0, sc.width, sc.height).data;
+    return { job: { type: 'process', rgba, w: sc.width, h: sc.height, corners: p.corners || null, level: p.level || 'normal' }, transfer: [rgba.buffer] };
+  }, onProgress);
+  p.corners = r.corners;
+  const wc = document.createElement('canvas'); wc.width = W; wc.height = H;
+  wc.getContext('2d').putImageData(new ImageData(r.warp, W, H), 0, 0);
+  p.warp = await toBlob(wc, 'image/jpeg', 0.85);
+  const cc = grayToCanvas(r.gray);
+  p.clean = await toBlob(cc, 'image/png'); p.thumb = thumbOf(cc);
+  await DB.put(p);
+}
+/* busy-overlay progress for one page; [a, b] is this page's slice of the whole bar */
+const pageProgress = (text, a = 0, b = 1) => s => busy(text, a + (b - a) * s.frac, STAGE_TEXT[s.stage]);
+
+async function addFiles(files) {
+  const list = [...files]; if (!list.length) return;
+  for (let i = 0; i < list.length; i++) {
+    const text = `กำลังล้างหน้า ${i + 1} จาก ${list.length}`;
+    busy(text, i / list.length, 'เปิดรูป'); await tick();
+    try {
+      const sc = await imageToCanvas(list[i], 2400);
+      const p = { id: uid(), level: 'normal', src: await toBlob(sc, 'image/jpeg', 0.9) };
+      await processPage(p, pageProgress(text, i / list.length, (i + 1) / list.length)); pages.push(p); saveOrder(); renderGrid();
+    } catch (e) { console.error(e); toast(`เปิดรูปที่ ${i + 1} ไม่ได้ ข้ามไป (${e && e.message || e})`, 5000); }
+  }
+  busy(null); renderGrid();
+}
+
+/* ---------------- home ---------------- */
+function renderGrid() {
+  const g = $('grid'); g.innerHTML = '';
+  $('empty').hidden = pages.length > 0;
+  $('exportBtn').disabled = !pages.length;
+  $('exportBtn').textContent = pages.length ? `สร้าง PDF (${pages.length} หน้า)` : 'สร้าง PDF';
+  pages.forEach((p, i) => {
+    const el = document.createElement('div'); el.className = 'card';
+    el.innerHTML = `<button class="thumb" aria-label="แก้ไขหน้า ${i + 1}"><img alt="" src="${p.thumb}"></button>
+      <div class="row"><span>หน้า ${i + 1}</span>
+      <button class="icon" data-a="up" aria-label="เลื่อนขึ้น" ${i ? '' : 'disabled'}>↑</button>
+      <button class="icon" data-a="down" aria-label="เลื่อนลง" ${i < pages.length - 1 ? '' : 'disabled'}>↓</button>
+      <button class="icon" data-a="del" aria-label="ลบหน้า">✕</button></div>`;
+    el.querySelector('.thumb').onclick = () => openEditor(i);
+    el.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
+      const a = b.dataset.a;
+      if (a === 'del') { if (!confirm(`ลบหน้า ${i + 1} ออกจากชุดนี้?`)) return; await DB.del(p.id); pages.splice(i, 1); }
+      else { const j = a === 'up' ? i - 1 : i + 1; [pages[i], pages[j]] = [pages[j], pages[i]]; }
+      saveOrder(); renderGrid();
+    });
+    g.appendChild(el);
+  });
+}
+$('fileIn').onchange = e => { const f = e.target.files; addFiles(f).then(() => e.target.value = ''); };
+
+/* ---------------- editor ---------------- */
+const ED = { i: -1, gray: null, M: null, img: null, undo: [], dirty: false, tool: 'tap', z: 1, tx: 0, ty: 0, orig: null };
+const cv = $('cv'), ov = $('ov'), ctx = cv.getContext('2d'), octx = ov.getContext('2d');
+cv.width = ov.width = W; cv.height = ov.height = H;
+
+async function openEditor(i) {
+  if (ED.i >= 0 && ED.i !== i) await saveEditor();
+  busy('กำลังเปิดหน้า', 0.5); await tick();
+  ED.i = i; const p = pages[i];
+  const img = await blobToImage(p.clean);
+  ctx.drawImage(img, 0, 0, W, H);
+  ED.img = ctx.getImageData(0, 0, W, H);
+  const g = new Uint8Array(W * H), d = ED.img.data;
+  for (let k = 0; k < g.length; k++) g[k] = d[k * 4];
+  const maps = await Engine.run(() => { const c = g.slice(); return { job: { type: 'maps', gray: c, W, H }, transfer: [c.buffer] }; });
+  ED.gray = g; ED.M = maps.M; ED.V = maps.V; ED.undo = []; ED.dirty = false; ED.orig = null;
+  $('tUndo').disabled = true;
+  $('edTitle').textContent = `หน้า ${i + 1} / ${pages.length}`;
+  $('edPrev').disabled = i === 0; $('edNext').disabled = i === pages.length - 1;
+  [...$('levelSeg').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.l === (p.level || 'normal')));
+  show('editor'); busy(null); fit(); setTool(ED.tool);
+}
+async function saveEditor() {
+  if (ED.i < 0 || !ED.dirty) return;
+  const p = pages[ED.i]; if (!p) return;
+  ctx.putImageData(ED.img, 0, 0);
+  p.clean = await toBlob(cv, 'image/png'); p.thumb = thumbOf(cv); ED.dirty = false;
+  await DB.put(p);
+}
+function show(v) { ['home', 'editor', 'crop'].forEach(k => $(k).hidden = k !== v); }
+$('edBack').onclick = async () => { await saveEditor(); ED.i = -1; show('home'); renderGrid(); };
+$('edPrev').onclick = () => openEditor(ED.i - 1);
+$('edNext').onclick = () => openEditor(ED.i + 1);
+
+function setTool(t) {
+  ED.tool = t;
+  $('tTap').setAttribute('aria-pressed', t === 'tap'); $('tErase').setAttribute('aria-pressed', t === 'erase');
+  $('eraseOpts').hidden = t !== 'erase';
+  $('hint').textContent = t === 'tap'
+    ? 'แตะกลางกล่องคำตอบ หรือระหว่างเส้นบรรทัด ใช้สองนิ้วซูม'
+    : 'ลากนิ้วถูรอยที่เหลือ ใช้สองนิ้วซูม';
+}
+$('tTap').onclick = () => setTool('tap');
+$('tErase').onclick = () => setTool('erase');
+
+/* view transform */
+const stage = $('stage'), wrapEl = $('wrap');
+function applyT() { wrapEl.style.transform = `translate(${ED.tx}px,${ED.ty}px) scale(${ED.z})`; }
+function fit() {
+  const r = stage.getBoundingClientRect();
+  ED.z = Math.min((r.width - 16) / W, (r.height - 16) / H);
+  ED.tx = (r.width - W * ED.z) / 2; ED.ty = Math.max(8, (r.height - H * ED.z) / 2); applyT();
+}
+$('fitBtn').onclick = fit;
+window.addEventListener('resize', () => { if (!$('editor').hidden) fit(); if (!$('crop').hidden) CR.layout(); });
+function toImg(cx, cy) { const r = stage.getBoundingClientRect(); return [(cx - r.left - ED.tx) / ED.z, (cy - r.top - ED.ty) / ED.z]; }
+
+/* pixel updates */
+function paint(idx) {
+  const d = ED.img.data; let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let k = 0; k < idx.length; k++) {
+    const i = idx[k], v = ED.gray[i], j = i * 4; d[j] = d[j + 1] = d[j + 2] = v;
+    const x = i % W, y = (i / W) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  if (x1 >= 0) ctx.putImageData(ED.img, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+}
+function pushUndo(patch) {
+  if (!patch.idx.length) return;
+  ED.undo.push(patch); if (ED.undo.length > 40) ED.undo.shift();
+  $('tUndo').disabled = false; ED.dirty = true;
+}
+$('tUndo').onclick = () => {
+  const u = ED.undo.pop(); if (!u) return;
+  for (let k = 0; k < u.idx.length; k++) ED.gray[u.idx[k]] = u.old[k];
+  paint(u.idx); ED.dirty = true; $('tUndo').disabled = !ED.undo.length;
+};
+
+/* compare with original */
+let holding = false;
+const origOn = async e => {
+  e.preventDefault(); holding = true;
+  if (!ED.orig) ED.orig = await blobToImage(pages[ED.i].warp);
+  if (holding) ctx.drawImage(ED.orig, 0, 0, W, H);
+};
+const origOff = () => { holding = false; if (ED.img) ctx.putImageData(ED.img, 0, 0); };
+$('tOrig').addEventListener('pointerdown', origOn);
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('tOrig').addEventListener(ev, origOff));
+$('tOrig').addEventListener('contextmenu', e => e.preventDefault());
+
+/* tap-to-clear */
+function flash(r, color) {
+  octx.clearRect(0, 0, W, H); octx.fillStyle = color; octx.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
+  clearTimeout(flash._t); flash._t = setTimeout(() => octx.clearRect(0, 0, W, H), 450);
+}
+function doTap(ix, iy) {
+  const r = HW.tapRegion(ED.gray, ED.M, W, H, ix, iy);
+  if (!r) return toast('ไม่พบกรอบหรือเส้นตรงนี้ ลองแตะกลางกล่อง หรือใช้ยางลบ');
+  if (r.blocked) { flash(r, 'rgba(228,92,132,.28)'); return toast('ในกรอบนี้มีตัวพิมพ์ ใช้ยางลบแทนเพื่อไม่ให้โจทย์หาย'); }
+  const patch = HW.wipe(ED.gray, ED.M, W, r); paint(patch.idx); pushUndo(patch);
+  flash(r, 'rgba(45,91,208,.22)');
+}
+
+/* eraser */
+let stroke = null;
+function eraseAt(x, y) {
+  const r = +$('bSize').value, keep = $('keepLines').checked, g = ED.gray, M = ED.M, V = ED.V, ch = [];
+  const x0 = Math.max(0, Math.floor(x - r)), x1 = Math.min(W - 1, Math.ceil(x + r));
+  const y0 = Math.max(0, Math.floor(y - r)), y1 = Math.min(H - 1, Math.ceil(y + r));
+  for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) {
+    if ((xx - x) ** 2 + (yy - y) ** 2 > r * r) continue;
+    const i = yy * W + xx; if (g[i] === 255 || (keep && (M[i] || V[i]))) continue;
+    stroke.idx.push(i); stroke.old.push(g[i]); g[i] = 255; ch.push(i);
+  }
+  paint(ch);
+}
+function eraseTo(x, y) {
+  const r = +$('bSize').value, [px, py] = stroke.last, dist = Math.hypot(x - px, y - py), n = Math.max(1, Math.ceil(dist / (r * 0.4)));
+  for (let k = 1; k <= n; k++) eraseAt(px + (x - px) * k / n, py + (y - py) * k / n);
+  stroke.last = [x, y];
+  octx.clearRect(0, 0, W, H); octx.strokeStyle = 'rgba(228,92,132,.9)'; octx.lineWidth = 3 / ED.z;
+  octx.beginPath(); octx.arc(x, y, r, 0, Math.PI * 2); octx.stroke();
+}
+function endStroke() {
+  if (!stroke) return;
+  pushUndo({ idx: Int32Array.from(stroke.idx), old: Uint8Array.from(stroke.old) });
+  stroke = null; octx.clearRect(0, 0, W, H);
+}
+
+/* pointer handling: 1 finger = tool (or pan in tap mode), 2 fingers = pinch/pan */
+const pts = new Map(); let g0 = null, single = null, multiDone = false;
+stage.addEventListener('pointerdown', e => {
+  if (e.target.closest('.fitbtn')) return;
+  stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pts.size === 1) {
+    multiDone = false;
+    single = { x: e.clientX, y: e.clientY, tx: ED.tx, ty: ED.ty, moved: false, t: Date.now() };
+  } else if (pts.size === 2) {
+    if (stroke) endStroke(); single = null; multiDone = true;
+    const [a, b] = [...pts.values()];
+    g0 = { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, z: ED.z, tx: ED.tx, ty: ED.ty };
+  }
+});
+stage.addEventListener('pointermove', e => {
+  if (!pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pts.size >= 2 && g0) {
+    const [a, b] = [...pts.values()], r = stage.getBoundingClientRect();
+    const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const zmin = Math.min((r.width - 16) / W, (r.height - 16) / H) * 0.6;
+    const z = Math.min(6, Math.max(zmin, g0.z * d / g0.d));
+    const cx = (g0.mx - r.left - g0.tx) / g0.z, cy = (g0.my - r.top - g0.ty) / g0.z;
+    ED.z = z; ED.tx = mx - r.left - cx * z; ED.ty = my - r.top - cy * z; applyT(); return;
+  }
+  if (!single || multiDone) return;
+  const dx = e.clientX - single.x, dy = e.clientY - single.y;
+  if (!single.moved && Math.hypot(dx, dy) > 6) {
+    single.moved = true;
+    if (ED.tool === 'erase') { const [ix, iy] = toImg(single.x, single.y); stroke = { idx: [], old: [], last: [ix, iy] }; eraseAt(ix, iy); }
+  }
+  if (!single.moved) return;
+  if (ED.tool === 'tap') { ED.tx = single.tx + dx; ED.ty = single.ty + dy; applyT(); }
+  else if (stroke) { const [ix, iy] = toImg(e.clientX, e.clientY); eraseTo(ix, iy); }
+});
+function up(e) {
+  if (!pts.has(e.pointerId)) return;
+  pts.delete(e.pointerId);
+  if (pts.size < 2) g0 = null;
+  if (pts.size === 0) {
+    if (single && !single.moved && !multiDone) {
+      const [ix, iy] = toImg(single.x, single.y);
+      if (ix >= 0 && iy >= 0 && ix < W && iy < H) {
+        if (ED.tool === 'tap') doTap(ix, iy);
+        else { stroke = { idx: [], old: [], last: [ix, iy] }; eraseAt(ix, iy); endStroke(); }
+      }
+    }
+    if (stroke) endStroke();
+    single = null;
+  }
+}
+stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+stage.addEventListener('wheel', e => {
+  e.preventDefault(); const r = stage.getBoundingClientRect();
+  const z = Math.min(6, Math.max(0.05, ED.z * Math.exp(-e.deltaY * 0.0015)));
+  const cx = (e.clientX - r.left - ED.tx) / ED.z, cy = (e.clientY - r.top - ED.ty) / ED.z;
+  ED.z = z; ED.tx = e.clientX - r.left - cx * z; ED.ty = e.clientY - r.top - cy * z; applyT();
+}, { passive: false });
+
+/* strength */
+$('levelSeg').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const p = pages[ED.i], l = b.dataset.l; if (l === (p.level || 'normal')) return;
+  if ((ED.undo.length || ED.dirty) && !confirm('เปลี่ยนความแรงจะล้างหน้านี้ใหม่ทั้งหมด งานที่แก้ด้วยมือในหน้านี้จะหายไป ทำต่อไหม?')) return;
+  p.level = l; ED.dirty = false; busy('กำลังล้างใหม่', 0); await tick();
+  await processPage(p, pageProgress('กำลังล้างใหม่')); busy(null); openEditor(ED.i);
+};
+
+/* ---------------- crop ---------------- */
+const CR = {
+  c: null, k: 1, ox: 0, oy: 0, pts: null, handles: [],
+  async open() {
+    await saveEditor();
+    const p = pages[ED.i];
+    if ((ED.undo.length) && !confirm('ปรับกรอบจะล้างหน้านี้ใหม่ งานที่แก้ด้วยมือในหน้านี้จะหายไป ทำต่อไหม?')) return;
+    busy('กำลังเปิดรูป', 0.5); await tick();
+    this.c = await imageToCanvas(p.src, 2400); this.pts = p.corners.map(q => q.slice());
+    show('crop'); busy(null); this.layout();
+  },
+  layout() {
+    const st = $('crStage'), r = st.getBoundingClientRect(), cc = $('crCv');
+    this.k = Math.min((r.width - 40) / this.c.width, (r.height - 40) / this.c.height);
+    cc.width = Math.round(this.c.width * this.k); cc.height = Math.round(this.c.height * this.k);
+    this.ox = (r.width - cc.width) / 2; this.oy = (r.height - cc.height) / 2;
+    cc.style.left = this.ox + 'px'; cc.style.top = this.oy + 'px';
+    this.handles.forEach(h => h.remove()); this.handles = [];
+    this.pts.forEach((q, n) => {
+      const h = document.createElement('div'); h.className = 'handle'; h.setAttribute('aria-label', 'มุมกระดาษ');
+      st.appendChild(h); this.handles.push(h);
+      h.addEventListener('pointerdown', e => { h.setPointerCapture(e.pointerId); h._drag = true; });
+      h.addEventListener('pointermove', e => {
+        if (!h._drag) return; const rr = st.getBoundingClientRect();
+        const x = Math.max(0, Math.min(this.c.width - 1, (e.clientX - rr.left - this.ox) / this.k));
+        const y = Math.max(0, Math.min(this.c.height - 1, (e.clientY - rr.top - this.oy) / this.k));
+        this.pts[n] = [x, y]; this.draw();
+      });
+      h.addEventListener('pointerup', () => h._drag = false);
+      h.addEventListener('pointercancel', () => h._drag = false);
+    });
+    this.draw();
+  },
+  draw() {
+    const cc = $('crCv'), c2 = cc.getContext('2d'), k = this.k;
+    c2.drawImage(this.c, 0, 0, cc.width, cc.height);
+    c2.fillStyle = 'rgba(45,91,208,.12)'; c2.strokeStyle = '#2D5BD0'; c2.lineWidth = 2;
+    c2.beginPath(); this.pts.forEach((q, n) => n ? c2.lineTo(q[0] * k, q[1] * k) : c2.moveTo(q[0] * k, q[1] * k)); c2.closePath(); c2.fill(); c2.stroke();
+    c2.lineWidth = 6; c2.beginPath(); c2.moveTo(this.pts[0][0] * k, this.pts[0][1] * k); c2.lineTo(this.pts[1][0] * k, this.pts[1][1] * k); c2.stroke();
+    this.handles.forEach((h, n) => { h.style.left = (this.ox + this.pts[n][0] * k) + 'px'; h.style.top = (this.oy + this.pts[n][1] * k) + 'px'; });
+  }
+};
+$('edCrop').onclick = () => CR.open();
+$('crCancel').onclick = () => { show('editor'); fit(); };
+$('crRotate').onclick = () => { const q = CR.pts; CR.pts = [q[3], q[0], q[1], q[2]]; CR.draw(); };
+$('crOk').onclick = async () => {
+  const p = pages[ED.i]; p.corners = CR.pts; busy('กำลังล้างใหม่', 0); await tick();
+  await processPage(p, pageProgress('กำลังล้างใหม่')); busy(null); ED.dirty = false; openEditor(ED.i);
+};
+
+/* ---------------- export ---------------- */
+function openSheet(html) { $('sheetPanel').innerHTML = html; $('sheet').hidden = false; }
+const closeSheet = () => $('sheet').hidden = true;
+$('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
+$('exportBtn').onclick = async () => {
+  if (!window.jspdf) return toast('โหลดตัวสร้าง PDF ไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+  const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  for (let i = 0; i < pages.length; i++) {
+    busy(`กำลังสร้าง PDF หน้า ${i + 1} จาก ${pages.length}`, i / pages.length); await tick();
+    x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(await blobToImage(pages[i].clean), 0, 0, W, H);
+    if (i) doc.addPage();
+    doc.addImage(c.toDataURL('image/jpeg', 0.82), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+  }
+  busy(null);
+  const d = new Date(), name = `homework-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.pdf`;
+  const blob = doc.output('blob'), file = new File([blob], name, { type: 'application/pdf' });
+  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  openSheet(`<h2>PDF พร้อมแล้ว</h2><p>${pages.length} หน้า ขนาด ${(blob.size / 1048576).toFixed(1)} MB</p>
+    ${canShare ? '<button class="btn primary" id="shShare">แชร์ หรือสั่งปริ๊น</button>' : ''}
+    <button class="btn ${canShare ? '' : 'primary'}" id="shDl">ดาวน์โหลด PDF</button>
+    <button class="btn" id="shNew">เริ่มชุดใหม่ (ลบงานชุดนี้จากเครื่อง)</button>
+    <button class="linkbtn" id="shClose">ปิด</button>`);
+  if (canShare) $('shShare').onclick = () => navigator.share({ files: [file], title: name }).catch(() => {});
+  $('shDl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); };
+  $('shNew').onclick = async () => { if (!confirm('ลบทุกหน้าในชุดนี้ออกจากเครื่อง?')) return; await DB.clear(); pages = []; closeSheet(); renderGrid(); };
+  $('shClose').onclick = closeSheet;
+};
+
+/* keep work safe when iOS backgrounds the tab */
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveEditor(); });
+
+/* ---------------- boot ---------------- */
+(async () => {
+  await DB.open();
+  const all = (await DB.all()) || [], order = (await DB.getOrder()) || [];
+  pages = all.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  if (!pages.length) $('tips').open = true;
+  renderGrid();
+})();
+})();
+</script>
+</body>
+</html>
